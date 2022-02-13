@@ -3,5 +3,7 @@
 """
 Created on Fri Feb 11 12:30:22 2022
 
-@author: majda
+@author: Magdalena and Johannes
 """
+
+
