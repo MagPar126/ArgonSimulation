@@ -75,33 +75,16 @@ class MolecularDynamics:
                 # num_diff = 3**self.dimension
                 basis = self.length * [-1, 0, 1]
 
-                #comb_basis = []
-                #for j in range(self.dimension):
-                #    comb_basis.append(basis)
-#
-                #basis_x, basis_y = np.meshgrid(basis, basis)
-                #
-                #new_diff = basis_x + basis_y
+                dims = []
 
+                for j in range(self.dimension):
+                    dims.append(len(basis))
 
-                #for pos in mirrored_positions:
-                #    if len(mirrored_positions) < 3**self.dimension:
-                #        for j in range(self.dimension):
-                #            for de in basis:
-                #                ev = np.zeros(self.dimension)
-                #                ev[j] = 1
-                #                new_pos = pos + de*ev
-                #                print("pos {}".format(pos))
-                #                print(de)
-                #                print(ev)
-                #                print("new pos: {}".format(new_pos))
-                #                mirrored_positions.append(new_pos)
-                #                print(mirrored_positions)
-                #    else:
-                #        break
-#
-#
-                #print(mirrored_positions)
+                image_boxes = np.zeros(dims)
+                it = np.nditer(image_boxes, flags=['multi_index'])
+                for x in it:
+                    print(np.array(it.multi_index)-1) # <<<<<<< this array times the length are the displacements of the
+                                                                # images, now calculate images, distance => minimum and give it back
 
         return 0
 
