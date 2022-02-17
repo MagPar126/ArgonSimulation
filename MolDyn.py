@@ -64,29 +64,35 @@ class MolecularDynamics:
 
         :return: List of list of difference vectors of the (mirrored) particles.
         """
-
+        diff_vectors = []
         for i, particle in enumerate(self.Particles):
             other_particles = self.Particles.copy()
             other_particles.remove(particle)
-
+            loc_diff_vectors=[] #diff vectors for this one particular particle
             for other_particle in other_particles:
-                mirrored_positions = [other_particle.pos]
-
-                # num_diff = 3**self.dimension
-                basis = self.length * [-1, 0, 1]
-
+                copies_distances = [] #list of distances of all copies from the particle
+                copies_diff_vectors=[] #list of diff vectors of all copies from the particle
+                
+                basis = [-1, 0, 1]
                 dims = []
-
                 for j in range(self.dimension):
                     dims.append(len(basis))
 
                 image_boxes = np.zeros(dims)
                 it = np.nditer(image_boxes, flags=['multi_index'])
                 for x in it:
-                    print(np.array(it.multi_index)-1) # <<<<<<< this array times the length are the displacements of the
-                                                                # images, now calculate images, distance => minimum and give it back
-
-        return 0
+                    displacement=(np.array(it.multi_index)-1)*self.length #displacements of copies in respect to the original one
+                    mirrored_pos = other_particle.pos + displacement #possition of the mirrored particle
+                    diff_vector = particle.pos - mirrored_pos #diff vector of the mirrored particle
+                    mirrored_distance = np.linalg.norm(diff_vector) 
+                    copies_distances.append(mirrored_distance)
+                    copies_diff_vectors.append(diff_vector)
+                
+                index_min_copy = np.argmin(copies_distances)
+                loc_diff_vectors.append(copies_diff_vectors[index_min_copy])
+            
+            diff_vectors.append(loc_diff_vectors)
+        return diff_vectors
 
     def simulation_step(self):
         list_diff_vectors = self.minimum_image_convention()
