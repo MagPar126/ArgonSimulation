@@ -2,6 +2,8 @@ import numpy as np
 
 import forces as forces
 
+import plotting as plotting
+
 class Particle:
     """
         Particle
@@ -118,7 +120,13 @@ class MolecularDynamics:
         return 0
 
     def save_trajectories(self):
-        pass
+        
+        trajectories = []
+        for particle in self.Particles:
+            trajectories.append(particle.trajectory)
+        plotting.save_to_file("Trajectories.txt", trajectories)
+        
+        return trajectories
 
 
 
