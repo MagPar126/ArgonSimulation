@@ -10,13 +10,14 @@ class Particle:
     """
 
     def __init__(self, pos0, vel0, mass=1):
-        # list for saving all positions of particle
-        self.trajectory = [pos0]
-
         # current position and velocity
         self.pos = pos0
         self.vel = vel0
         self.mass = mass
+
+        # list for saving all positions of particle
+        self.trajectory = []
+        self.trajectory.append(self.pos)
 
 
 class MolecularDynamics:
@@ -24,12 +25,11 @@ class MolecularDynamics:
     Whole simulation of n particles in a box interacting via Lennard-Jones-potential.
     """
 
-    def __init__(self, length, num_particles, time_step, dimension=2, mass=1, potential='LJ'):
-        self.length = length
+    def __init__(self, rLength, num_particles, time_step, dimension=2, potential='LJ'):
+        self.length = rLength
         self.num_particles = num_particles
         self.h = time_step
         self.dimension = dimension
-        self.mass = mass
 
         if potential == 'LJ':
             self.force = forces.LJ_force
@@ -50,13 +50,15 @@ class MolecularDynamics:
 
         self.Particles = []
 
-        np.random.seed(0)
-        positions = self.length * np.random.rand(self.num_particles, self.dimension)
-        velocities = 2 * self.length/0.01 * np.random.rand(self.num_particles, self.dimension) - self.length/0.01 # <<<<<FIXME: include a meaningful upper boundary
+        #np.random.seed(0)
+        #positions = self.length * np.random.rand(self.num_particles, self.dimension)
+        #velocities = 2 * self.length/10 * np.random.rand(self.num_particles, self.dimension) - self.length/10
 
+        positions = np.array([[4,4,5],[6,6,5]])
+        velocities = np.array([[0,0,0.05],[0,0,-0.05]])
         for i in range(self.num_particles):
-            (self.Particles).append(Particle(positions[i,:], velocities[i,:], self.mass))
-            # print("v: {}".format(self.Particles[i].pos))
+            (self.Particles).append(Particle(positions[i,:], velocities[i,:]))
+            print("pos: {} \t vel: {}".format(self.Particles[i].pos, self.Particles[i].vel))
 
         return 0
 
@@ -102,31 +104,48 @@ class MolecularDynamics:
         for i, particle in enumerate(self.Particles):
             diff_vectors = list_diff_vectors[i]
 
-            particle.pos += particle.vel * self.h # <<<<<FIXME: Save the position IN THE BOX, and not outside
-            particle.pos = particle.pos % self.length # <<<<<<<<< checkme
-            particle.vel += self.h * self.force(diff_vectors) / self.mass
+            new_position = particle.pos + particle.vel * self.h
+            new_position = new_position % self.length
+            particle.vel += self.h * self.force(diff_vectors)
 
-            (particle.trajectory).append(particle.pos)
+            (particle.trajectory).append(new_position)
+            particle.pos = new_position
 
         return 0
 
-    def simulate(self, num_steps):
+    def simulate(self, num_steps, save_filename=None):
 
         for t in range(num_steps):
-            self.simulate_step()
+            self.simulation_step()
 
-        self.save_trajectories()
+        if save_filename is None:
+            self.save_filename = "Trajectories.txt"
+        else:
+            self.save_filename = save_filename
+
+        self.save_trajectories(self.save_filename)
 
         return 0
 
-    def save_trajectories(self):
+    def save_trajectories(self, save_filename):
         
         trajectories = []
         for particle in self.Particles:
             trajectories.append(particle.trajectory)
-        plotting.save_to_file("Trajectories.txt", trajectories)
+        plotting.save_to_file(save_filename, trajectories, self.length)
         
         return trajectories
 
+    def plot_trajectories(self):
+        trajectories = self.save_trajectories(self.save_filename)
+        if self.dimension == 1:
+            plotting.plot_1D(trajectories, self.length)
+        elif self.dimension == 2:
+            plotting.plot_2D(trajectories, self.length)
+        elif self.dimension == 3:
+            plotting.plot_3D(trajectories, self.length)
+        else:
+            print("Dimension bigger or equal than 4. No reasonable method for plotting implemented!")
 
+        return 0
 
