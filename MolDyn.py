@@ -4,6 +4,8 @@ import forces as forces
 
 import plotting as plotting
 
+import matplotlib.pyplot as plt
+
 class Particle:
     """
         Particle
@@ -18,6 +20,11 @@ class Particle:
         # list for saving all positions of particle
         self.trajectory = []
         self.trajectory.append(self.pos)
+        
+        # lists for saving all kinetic and total energies
+        self.kin_energy = []
+        self.tot_energy = []
+        
 
 
 class MolecularDynamics:
@@ -33,6 +40,7 @@ class MolecularDynamics:
 
         if potential == 'LJ':
             self.force = forces.LJ_force
+            self.potential = forces.LJ_potential_energy
         else:
             print("Wrong wording or force not implemented yet!")
             exit(-1)
@@ -107,13 +115,18 @@ class MolecularDynamics:
             new_position = particle.pos + particle.vel * self.h
             new_position = new_position % self.length
             particle.vel += self.h * self.force(diff_vectors)
+            
+            # ------- saving energies first
+            particle.kin_energy.append(forces.kinetic_energy(particle.vel))
+            particle.tot_energy.append(forces.kinetic_energy(particle.vel)+self.potential(diff_vectors))
+            # -------
 
             (particle.trajectory).append(new_position)
             particle.pos = new_position
 
         return 0
 
-    def simulate(self, num_steps, save_filename=None):
+    def simulate(self, num_steps, save_filename=None, save_filename_energies=None):
 
         for t in range(num_steps):
             self.simulation_step()
@@ -122,9 +135,17 @@ class MolecularDynamics:
             self.save_filename = "Trajectories.txt"
         else:
             self.save_filename = save_filename
+            
+        # ----- the same for filename of energies
+        if save_filename_energies is None:
+            self.save_filename_energies = "Energies.txt"
+        else:
+            self.save_filename_energies = save_filename_energies
+        
+        self.energies = self.save_energies(self.save_filename_energies)
+        # -----
 
         self.save_trajectories(self.save_filename)
-
         return 0
 
     def save_trajectories(self, save_filename):
@@ -135,6 +156,15 @@ class MolecularDynamics:
         plotting.save_to_file(save_filename, trajectories, self.length)
         
         return trajectories
+    
+    def save_energies(self, save_filename):
+        
+        energies = []
+        for particle in self.Particles:
+            energies.append([particle.kin_energy,particle.tot_energy])
+        plotting.save_energies_to_file(save_filename, energies)
+        
+        return energies
 
     def plot_trajectories(self):
         trajectories = self.save_trajectories(self.save_filename)
@@ -148,4 +178,13 @@ class MolecularDynamics:
             print("Dimension bigger or equal than 4. No reasonable method for plotting implemented!")
 
         return 0
-
+    
+    def plot_energies(self):  #FINISH ME!!!
+        x = np.arange(len(self.energies[0][0]))
+        fig, axs = plt.subplots(2)
+        fig.suptitle("Total and potential energies of particles")
+        for particle in range(self.num_particles):
+            axs[0].plot(x, self.energies[particle][0])
+            axs[1].plot(x, self.energies[particle][1])
+        plt.show()
+        return 0

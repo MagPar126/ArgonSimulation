@@ -50,6 +50,62 @@ def save_to_file(name_of_file, trajectories, length):
     file.close()
     return 0
 
+def save_energies_to_file(name_of_file, energies):
+    """
+    Saves particle energies from the simulation to a file.
+    return: 0 if succes
+    """
+    number_of_particles = len(energies)
+    number_of_steps = len(energies[0][0])
+    file = open(name_of_file,"w")
+    file.write("%d %d\n" %(number_of_particles,number_of_steps))
+    for particle in range(number_of_particles):
+        for step in range(number_of_steps):              #saving kinetic energies
+            file.write("%f " %energies[particle][0][step])
+        file.write("\n")
+        for step in range(number_of_steps):              #saving total energies
+            file.write("%f " %energies[particle][1][step])
+        file.write("\n")
+            
+    file.close()
+    return 0
+
+def load_energies_from_file_(name_of_file="Energies.txt"):
+    
+    
+    """
+    Loads particle energies from a file
+
+    :return: List of list of kinetic(0) and total(1) energies of particles.
+    """
+    try:
+        file = open(name_of_file,"r")
+    except IOError:
+        print ("Could not open file.")
+    parameters = file.readline() #reads the first line, there is number of particles, number of steps of simulation, dimension of simulation
+    parameters = parameters.rstrip('\n')
+    parameters = parameters.split(" ")
+    number_of_particles = int(parameters[0])
+    #number_of_steps = int(parameters[1])
+    all_energies=[]
+
+    for particle in range(number_of_particles):
+        energies = []
+        kin_en = file.readline()
+        kin_en = kin_en.rstrip(' \n')
+        kin_en = kin_en.split(" ")
+        kin_en = np.array(kin_en, dtype = float)
+        energies.append(kin_en)
+            
+        tot_en = file.readline()
+        tot_en = tot_en.rstrip(' \n')
+        tot_en = tot_en.split(" ")
+        tot_en = np.array(tot_en, dtype = float)
+        energies.append(tot_en)
+        all_energies.append(energies)
+    file.close()
+    return all_energies
+
 def plot_2D(trajectories, length):
 
     for trajectorie in trajectories:
@@ -132,4 +188,21 @@ def plot_trajectories(name_of_file):
     else:
         print("Dimension bigger or equal than 4. No reasonable method for plotting implemented!")
 
+    return 
+
+def plot_energies(name_of_file):  #FINISH ME!!!
+    energies = load_energies_from_file_(name_of_file)
+    number_of_particles = len(energies)
+    number_of_steps = len(energies[0][0])
+    print(number_of_particles,number_of_steps)
+    x = np.arange(number_of_steps)
+    fig, axs = plt.subplots(2)
+    fig.suptitle("Total and potential energies of particles")
+    for particle in range(number_of_particles):
+        axs[0].plot(x, energies[particle][0])
+        axs[1].plot(x, energies[particle][1])
+    plt.show()
     return 0
+
+
+    
