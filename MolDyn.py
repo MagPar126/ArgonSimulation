@@ -182,9 +182,17 @@ class MolecularDynamics:
     def plot_energies(self):  #FINISH ME!!!
         x = np.arange(len(self.energies[0][0]))
         fig, axs = plt.subplots(2)
-        fig.suptitle("Total and potential energies of particles")
+
+        linetypes = ['--', ':']
         for particle in range(self.num_particles):
-            axs[0].plot(x, self.energies[particle][0])
-            axs[1].plot(x, self.energies[particle][1])
+            axs[0].plot(x, self.energies[particle][0], linetypes[particle], label='Particle ' + str(particle), linewidth=2.5)
+            axs[1].plot(x, self.energies[particle][1], linetypes[particle], label='Particle ' + str(particle), linewidth=2.5)
+        axs[0].set_title('Kinetic Energies')
+        axs[1].set_title('Total Energies')
+
+        axs[0].legend(loc='best')
+        axs[1].legend(loc='best')
+
+        plt.tight_layout()
         plt.show()
         return 0

@@ -53,7 +53,7 @@ def save_to_file(name_of_file, trajectories, length):
 def save_energies_to_file(name_of_file, energies):
     """
     Saves particle energies from the simulation to a file.
-    return: 0 if succes
+    return: 0 if success
     """
     number_of_particles = len(energies)
     number_of_steps = len(energies[0][0])
@@ -71,10 +71,8 @@ def save_energies_to_file(name_of_file, energies):
     return 0
 
 def load_energies_from_file_(name_of_file="Energies.txt"):
-    
-    
     """
-    Loads particle energies from a file
+    Loads particle energies from a file.
 
     :return: List of list of kinetic(0) and total(1) energies of particles.
     """
@@ -133,6 +131,8 @@ def plot_2D(trajectories, length):
 
     plt.xlim(0, length)
     plt.ylim(0, length)
+
+    plt.title('Trajectory')
     plt.show()
 
     return 0
@@ -173,6 +173,8 @@ def plot_3D(trajectories, length):
     ax.set_xlim3d(0,length)
     ax.set_ylim3d(0,length)
     ax.set_zlim3d(0,length)
+
+    ax.set_title('Trajectory')
     plt.show()
 
     return 0
@@ -197,10 +199,20 @@ def plot_energies(name_of_file):  #FINISH ME!!!
     print(number_of_particles,number_of_steps)
     x = np.arange(number_of_steps)
     fig, axs = plt.subplots(2)
-    fig.suptitle("Total and potential energies of particles")
+
+    linetypes = ['--', ':']
     for particle in range(number_of_particles):
-        axs[0].plot(x, energies[particle][0])
-        axs[1].plot(x, energies[particle][1])
+        axs[0].plot(x, energies[particle][0], linetypes[particle], label='Particle ' + str(particle),
+                    linewidth=2.5)
+        axs[1].plot(x, energies[particle][1], linetypes[particle], label='Particle ' + str(particle),
+                    linewidth=2.5)
+    axs[0].set_title('Kinetic Energies')
+    axs[1].set_title('Total Energies')
+
+    axs[0].legend(loc='best')
+    axs[1].legend(loc='best')
+
+    plt.tight_layout()
     plt.show()
     return 0
 
