@@ -32,11 +32,12 @@ class MolecularDynamics:
     Whole simulation of n particles in a box interacting via Lennard-Jones-potential.
     """
 
-    def __init__(self, rLength, num_particles, time_step, dimension=2, potential='LJ'):
+    def __init__(self, rLength, num_particles, time_step, dimension=2, potential='LJ', method='Verlet'):
         self.length = rLength
         self.num_particles = num_particles
         self.h = time_step
         self.dimension = dimension
+        self.method = method
 
         if potential == 'LJ':
             self.force = forces.LJ_force
@@ -58,71 +59,126 @@ class MolecularDynamics:
 
         self.Particles = []
 
-        #np.random.seed(0)
-        #positions = self.length * np.random.rand(self.num_particles, self.dimension)
-        #velocities = 2 * self.length/10 * np.random.rand(self.num_particles, self.dimension) - self.length/10
+        np.random.seed(42)
+        positions = self.length/4 + self.length*0.5 * np.random.rand(self.num_particles, self.dimension)
+        velocities = 2 * self.length/20 * np.random.rand(self.num_particles, self.dimension) - self.length/20
 
-        positions = np.array([[4,4,5],[6,6,5]])
-        velocities = np.array([[0,0,0.05],[0,0,-0.05]])
+        #positions = np.array([[4,4,5],[6,6,5]])
+        #velocities = np.array([[0,0,0.05],[0,0,-0.05]])
         for i in range(self.num_particles):
             (self.Particles).append(Particle(positions[i,:], velocities[i,:]))
             print("pos: {} \t vel: {}".format(self.Particles[i].pos, self.Particles[i].vel))
 
         return 0
 
-    def minimum_image_convention(self):
+    def minimum_image_convention(self, new_version=True):
         """
         Minimum image convention for all particles.
 
         :return: List of list of difference vectors of the (mirrored) particles.
         """
-        diff_vectors = []
-        for i, particle in enumerate(self.Particles):
-            other_particles = self.Particles.copy()
-            other_particles.remove(particle)
-            loc_diff_vectors=[] #diff vectors for this one particular particle
-            for other_particle in other_particles:
-                copies_distances = [] #list of distances of all copies from the particle
-                copies_diff_vectors=[] #list of diff vectors of all copies from the particle
-                
-                basis = [-1, 0, 1]
-                dims = []
-                for j in range(self.dimension):
-                    dims.append(len(basis))
+        if new_version:
+            diff_vectors = []
+            for particle in self.Particles:
+                other_particles = self.Particles.copy()
+                other_particles.remove(particle)
+                loc_diff_vectors = []  # diff vectors for this one particular particle
+                for other_particle in other_particles:
+                    diff_vector = (particle.pos - other_particle.pos + self.length/2) % self.length - self.length/2
+                    loc_diff_vectors.append(diff_vector)
+                diff_vectors.append(loc_diff_vectors)
+        else:
+            diff_vectors = []
+            for i, particle in enumerate(self.Particles):
+                other_particles = self.Particles.copy()
+                other_particles.remove(particle)
+                loc_diff_vectors=[] #diff vectors for this one particular particle
+                for other_particle in other_particles:
+                    copies_distances = [] #list of distances of all copies from the particle
+                    copies_diff_vectors=[] #list of diff vectors of all copies from the particle
 
-                image_boxes = np.zeros(dims)
-                it = np.nditer(image_boxes, flags=['multi_index'])
-                for x in it:
-                    displacement=(np.array(it.multi_index)-1)*self.length #displacements of copies in respect to the original one
-                    mirrored_pos = other_particle.pos + displacement #possition of the mirrored particle
-                    diff_vector = particle.pos - mirrored_pos #diff vector of the mirrored particle
-                    mirrored_distance = np.linalg.norm(diff_vector) 
-                    copies_distances.append(mirrored_distance)
-                    copies_diff_vectors.append(diff_vector)
-                
-                index_min_copy = np.argmin(copies_distances)
-                loc_diff_vectors.append(copies_diff_vectors[index_min_copy])
-            
-            diff_vectors.append(loc_diff_vectors)
+                    basis = [-1, 0, 1]
+                    dims = []
+                    for j in range(self.dimension):
+                        dims.append(len(basis))
+
+                    image_boxes = np.zeros(dims)
+                    it = np.nditer(image_boxes, flags=['multi_index'])
+                    for x in it:
+                        displacement=(np.array(it.multi_index)-1)*self.length #displacements of copies in respect to the original one
+                        mirrored_pos = other_particle.pos + displacement #possition of the mirrored particle
+                        diff_vector = particle.pos - mirrored_pos #diff vector of the mirrored particle
+                        mirrored_distance = np.linalg.norm(diff_vector)
+                        copies_distances.append(mirrored_distance)
+                        copies_diff_vectors.append(diff_vector)
+
+                    index_min_copy = np.argmin(copies_distances)
+                    loc_diff_vectors.append(copies_diff_vectors[index_min_copy])
+
+                diff_vectors.append(loc_diff_vectors)
         return diff_vectors
 
     def simulation_step(self):
         list_diff_vectors = self.minimum_image_convention()
 
-        for i, particle in enumerate(self.Particles):
-            diff_vectors = list_diff_vectors[i]
+        if self.method == 'Verlet':
+            if len(self.Particles[0].trajectory) >= 2:
+                # normal simulation step
+                for i, particle in enumerate(self.Particles):
+                    diff_vectors = list_diff_vectors[i]
 
-            new_position = particle.pos + particle.vel * self.h
-            new_position = new_position % self.length
-            particle.vel += self.h * self.force(diff_vectors)
-            
-            # ------- saving energies first
-            particle.kin_energy.append(forces.kinetic_energy(particle.vel))
-            particle.tot_energy.append(forces.kinetic_energy(particle.vel)+self.potential(diff_vectors))
-            # -------
+                    new_position = 2*particle.pos - particle.trajectory[-2] + self.force(diff_vectors) * self.h**2
+                    new_position = new_position % self.length
+                    particle.vel = (new_position - particle.trajectory[-2])/(2*self.h)
 
-            (particle.trajectory).append(new_position)
-            particle.pos = new_position
+                    # ------- saving energies first
+                    particle.kin_energy.append(forces.kinetic_energy(particle.vel))
+                    particle.tot_energy.append(forces.kinetic_energy(particle.vel)+self.potential(diff_vectors))
+                    # -------
+
+                    (particle.trajectory).append(new_position)
+                    particle.pos = new_position
+            else:
+                # previous timestep unknown, aproximate it
+                for i, particle in enumerate(self.Particles):
+                    diff_vectors = list_diff_vectors[i]
+
+                    previous_position = particle.pos - self.h * particle.vel
+                    previous_position = previous_position % self.length
+
+                    new_position = 2 * particle.pos - previous_position + self.force(diff_vectors) * self.h ** 2
+                    new_position = new_position % self.length
+                    particle.vel = (new_position - previous_position) / (2 * self.h)
+
+                    # ------- saving energies first
+                    particle.kin_energy.append(forces.kinetic_energy(particle.vel))
+                    particle.tot_energy.append(forces.kinetic_energy(particle.vel) + self.potential(diff_vectors))
+                    # -------
+
+                    (particle.trajectory).append(new_position)
+                    particle.pos = new_position
+
+
+        elif self.method == 'Euler':
+            for i, particle in enumerate(self.Particles):
+                diff_vectors = list_diff_vectors[i]
+
+                new_position = particle.pos + particle.vel * self.h
+                new_position = new_position % self.length
+                particle.vel += self.h * self.force(diff_vectors)
+
+                # ------- saving energies first
+                particle.kin_energy.append(forces.kinetic_energy(particle.vel))
+                particle.tot_energy.append(forces.kinetic_energy(particle.vel) + self.potential(diff_vectors))
+                # -------
+
+                (particle.trajectory).append(new_position)
+                particle.pos = new_position
+
+        else:
+            print("Method for simulation step is not implemented.")
+            exit(-1)
+
 
         return 0
 
@@ -181,14 +237,19 @@ class MolecularDynamics:
     
     def plot_energies(self):  #FINISH ME!!!
         x = np.arange(len(self.energies[0][0]))
-        fig, axs = plt.subplots(2)
+        fig, axs = plt.subplots(3)
 
-        linetypes = ['--', ':']
+        energy = 0
         for particle in range(self.num_particles):
-            axs[0].plot(x, self.energies[particle][0], linetypes[particle], label='Particle ' + str(particle), linewidth=2.5)
-            axs[1].plot(x, self.energies[particle][1], linetypes[particle], label='Particle ' + str(particle), linewidth=2.5)
+            axs[0].plot(x, self.energies[particle][0], label='Particle ' + str(particle), linewidth=2.5)
+            axs[1].plot(x, self.energies[particle][1], label='Particle ' + str(particle), linewidth=2.5)
+            energy += np.array(self.energies[particle][1])
+
+        axs[2].plot(x, energy)
+
         axs[0].set_title('Kinetic Energies')
         axs[1].set_title('Total Energies')
+        axs[2].set_title('Total Energy of the System')
 
         axs[0].legend(loc='best')
         axs[1].legend(loc='best')

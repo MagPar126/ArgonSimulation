@@ -105,7 +105,7 @@ def load_energies_from_file_(name_of_file="Energies.txt"):
     return all_energies
 
 def plot_2D(trajectories, length):
-
+    color='r'
     for trajectorie in trajectories:
         x = []
         y = []
@@ -127,7 +127,9 @@ def plot_2D(trajectories, length):
             plot_y.append(y[split_indices[i]:split_indices[i+1]])
 
         for x_part, y_part in zip(plot_x, plot_y):
-            plt.plot(x_part, y_part, linewidth=1.2)
+            plt.plot(x_part, y_part, linewidth=1.2, color=color)
+
+        plt.plot(x[0], y[0], marker='o', markersize=2.0, color='k')
 
     plt.xlim(0, length)
     plt.ylim(0, length)
@@ -141,6 +143,8 @@ def plot_3D(trajectories, length):
     from mpl_toolkits.mplot3d import Axes3D
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
+
+    color='r'
 
     for trajectorie in trajectories:
         x = []
@@ -168,8 +172,9 @@ def plot_3D(trajectories, length):
             plot_z.append(z[split_indices[i]:split_indices[i + 1]])
 
         for x_part, y_part, z_part in zip(plot_x, plot_y, plot_z):
-            ax.plot(x_part, y_part, z_part, linewidth=1.2)
+            ax.plot(x_part, y_part, z_part, linewidth=1.2, color=color)
 
+        ax.plot(x[0], y[0], z[0], marker='o', markersize=2.0, color='k')
     ax.set_xlim3d(0,length)
     ax.set_ylim3d(0,length)
     ax.set_zlim3d(0,length)
@@ -200,11 +205,10 @@ def plot_energies(name_of_file):  #FINISH ME!!!
     x = np.arange(number_of_steps)
     fig, axs = plt.subplots(2)
 
-    linetypes = ['--', ':']
     for particle in range(number_of_particles):
-        axs[0].plot(x, energies[particle][0], linetypes[particle], label='Particle ' + str(particle),
+        axs[0].plot(x, energies[particle][0], label='Particle ' + str(particle),
                     linewidth=2.5)
-        axs[1].plot(x, energies[particle][1], linetypes[particle], label='Particle ' + str(particle),
+        axs[1].plot(x, energies[particle][1], label='Particle ' + str(particle),
                     linewidth=2.5)
     axs[0].set_title('Kinetic Energies')
     axs[1].set_title('Total Energies')
