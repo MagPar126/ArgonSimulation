@@ -20,6 +20,10 @@ class Particle:
         # list for saving all positions of particle
         self.trajectory = []
         self.trajectory.append(self.pos)
+
+        # list for saving all positions also outside the box of particle
+        self.trajectory_out = []
+        self.trajectory_out.append(self.pos)
         
         # lists for saving all kinetic and total energies
         self.kin_energy = []
@@ -59,7 +63,7 @@ class MolecularDynamics:
 
         self.Particles = []
 
-        np.random.seed(42)
+        np.random.seed(0)
         positions = self.length/4 + self.length*0.5 * np.random.rand(self.num_particles, self.dimension)
         velocities = 2 * self.length/20 * np.random.rand(self.num_particles, self.dimension) - self.length/20
 
@@ -127,14 +131,28 @@ class MolecularDynamics:
                 for i, particle in enumerate(self.Particles):
                     diff_vectors = list_diff_vectors[i]
 
-                    new_position = 2*particle.pos - particle.trajectory[-2] + self.force(diff_vectors) * self.h**2
-                    new_position = new_position % self.length
-                    particle.vel = (new_position - particle.trajectory[-2])/(2*self.h)
-
                     # ------- saving energies first
+                    # if forces.kinetic_energy(particle.vel) > 10:
+                    #     print(particle.vel)
+                    #     print(np.linalg.norm(particle.vel))
+
                     particle.kin_energy.append(forces.kinetic_energy(particle.vel))
-                    particle.tot_energy.append(forces.kinetic_energy(particle.vel)+self.potential(diff_vectors))
+                    particle.tot_energy.append(forces.kinetic_energy(particle.vel) + self.potential(diff_vectors))
                     # -------
+
+                    if (np.linalg.norm(particle.pos - particle.trajectory[-2])>self.length/2):
+                        print("Alert!")
+                        print("using: ", particle.trajectory_out[-1])
+                        print("other than: ", particle.trajectory[-1])
+                        pos = particle.trajectory_out[-1]
+                    else:
+                        pos = particle.trajectory[-1]
+
+                    new_position = 2*pos - particle.trajectory[-2] + self.force(diff_vectors) * self.h**2
+                    particle.vel = (new_position - particle.trajectory[-2]) /(2*self.h)
+
+                    (particle.trajectory_out).append(new_position)
+                    new_position = new_position % self.length
 
                     (particle.trajectory).append(new_position)
                     particle.pos = new_position
@@ -143,17 +161,18 @@ class MolecularDynamics:
                 for i, particle in enumerate(self.Particles):
                     diff_vectors = list_diff_vectors[i]
 
-                    previous_position = particle.pos - self.h * particle.vel
-                    previous_position = previous_position % self.length
-
-                    new_position = 2 * particle.pos - previous_position + self.force(diff_vectors) * self.h ** 2
-                    new_position = new_position % self.length
-                    particle.vel = (new_position - previous_position) / (2 * self.h)
-
                     # ------- saving energies first
                     particle.kin_energy.append(forces.kinetic_energy(particle.vel))
                     particle.tot_energy.append(forces.kinetic_energy(particle.vel) + self.potential(diff_vectors))
                     # -------
+
+                    previous_position = particle.pos - self.h * particle.vel
+                    previous_position = previous_position % self.length
+
+                    new_position = 2 * particle.pos - previous_position + self.force(diff_vectors) * self.h ** 2
+                    (particle.trajectory_out).append(new_position)
+                    new_position = new_position % self.length
+                    particle.vel = (new_position - previous_position) / (2 * self.h)
 
                     (particle.trajectory).append(new_position)
                     particle.pos = new_position
@@ -163,14 +182,14 @@ class MolecularDynamics:
             for i, particle in enumerate(self.Particles):
                 diff_vectors = list_diff_vectors[i]
 
-                new_position = particle.pos + particle.vel * self.h
-                new_position = new_position % self.length
-                particle.vel += self.h * self.force(diff_vectors)
-
                 # ------- saving energies first
                 particle.kin_energy.append(forces.kinetic_energy(particle.vel))
                 particle.tot_energy.append(forces.kinetic_energy(particle.vel) + self.potential(diff_vectors))
                 # -------
+
+                new_position = particle.pos + particle.vel * self.h
+                new_position = new_position % self.length
+                particle.vel += self.h * self.force(diff_vectors)
 
                 (particle.trajectory).append(new_position)
                 particle.pos = new_position
@@ -186,6 +205,13 @@ class MolecularDynamics:
 
         for t in range(num_steps):
             self.simulation_step()
+            # if (t not in range(9878, 9890)):
+            #     self.simulation_step()
+            # else:
+            #     self.simulation_step()
+            #     for particle in self.Particles:
+            #         print(particle.pos)
+            #         print(particle.vel)
 
         if save_filename is None:
             self.save_filename = "Trajectories.txt"
