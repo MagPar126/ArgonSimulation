@@ -28,7 +28,8 @@ class Particle:
         # lists for saving all kinetic and total energies
         self.kin_energy = []
         self.tot_energy = []
-        
+        self.tot_vel=[]
+        self.tot_vel.append(self.vel)
 
 
 class MolecularDynamics:
@@ -193,8 +194,11 @@ class MolecularDynamics:
             for i, particle in enumerate(self.Particles):
                 diff_vectors_t = list_diff_vectors_t[i]
                 diff_vectors_th = list_diff_vectors_th[i]
-
+                
                 particle.vel += (self.h / 2) * (self.force(diff_vectors_th) + self.force(diff_vectors_t))
+                #print(particle.vel)
+                particle.tot_vel.append(particle.vel)
+                #print(particle.tot_vel[-1],"\n\n")
 
         elif self.method == 'Euler':
             for i, particle in enumerate(self.Particles):
@@ -208,9 +212,13 @@ class MolecularDynamics:
                 new_position = particle.pos + particle.vel * self.h
                 new_position = new_position % self.length
                 particle.vel += self.h * self.force(diff_vectors)
+                #print(particle.vel)
 
                 (particle.trajectory).append(new_position)
+                #print("trajectory ",particle.trajectory)
                 particle.pos = new_position
+                particle.tot_vel.append(particle.vel)
+                print("velocity ", particle.tot_vel)
 
         else:
             print("Method for simulation step is not implemented.")
@@ -218,7 +226,17 @@ class MolecularDynamics:
 
 
         return 0
+    def plot_velocity(self):
+        
+        velocities = np.zeros((len(self.Particles[0].tot_vel),3))
+        print(np.shape(velocities))
+        for particle in self.Particles:
+            velocities += particle.tot_vel
+            #print(particle.tot_vel)
+        plotting.plot_3D([velocities], self.length)
 
+        
+        
     def simulate(self, num_steps, save_filename=None, save_filename_energies=None):
 
         for t in range(num_steps):
