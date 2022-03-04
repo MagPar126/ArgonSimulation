@@ -36,12 +36,13 @@ class MolecularDynamics:
     Whole simulation of n particles in a box interacting via Lennard-Jones-potential.
     """
 
-    def __init__(self, rLength, num_particles, time_step, dimension=2, potential='LJ', method='Verlet'):
+    def __init__(self, rLength, num_particles, time_step, dimension=2, potential='LJ', method='Verlet', new_mic=True):
         self.length = rLength
         self.num_particles = num_particles
         self.h = time_step
         self.dimension = dimension
         self.method = method
+        self.new_mic = new_mic
 
         if potential == 'LJ':
             self.force = forces.LJ_force
@@ -65,23 +66,23 @@ class MolecularDynamics:
 
         np.random.seed(0)
         positions = self.length/4 + self.length*0.5 * np.random.rand(self.num_particles, self.dimension)
-        velocities = 2 * self.length/20 * np.random.rand(self.num_particles, self.dimension) - self.length/20
+        velocities = 2 * self.length/10 * np.random.rand(self.num_particles, self.dimension) - self.length/10
 
-        #positions = np.array([[4,4,5],[6,6,5]])
-        #velocities = np.array([[0,0,0.05],[0,0,-0.05]])
+        # positions = np.array([[4,6,5],[6,6,5]])
+        # velocities = np.array([[0.5,0,0.1],[-0.5,0,-0.1]])
         for i in range(self.num_particles):
             (self.Particles).append(Particle(positions[i,:], velocities[i,:]))
             print("pos: {} \t vel: {}".format(self.Particles[i].pos, self.Particles[i].vel))
 
         return 0
 
-    def minimum_image_convention(self, new_version=True):
+    def minimum_image_convention(self):
         """
         Minimum image convention for all particles.
 
         :return: List of list of difference vectors of the (mirrored) particles.
         """
-        if new_version:
+        if self.new_mic:
             diff_vectors = []
             for particle in self.Particles:
                 other_particles = self.Particles.copy()
@@ -125,17 +126,13 @@ class MolecularDynamics:
     def simulation_step(self):
         list_diff_vectors = self.minimum_image_convention()
 
-        if self.method == 'Verlet':
+        if self.method == 'Verlet_x':
             if len(self.Particles[0].trajectory) >= 2:
                 # normal simulation step
                 for i, particle in enumerate(self.Particles):
                     diff_vectors = list_diff_vectors[i]
 
                     # ------- saving energies first
-                    # if forces.kinetic_energy(particle.vel) > 10:
-                    #     print(particle.vel)
-                    #     print(np.linalg.norm(particle.vel))
-
                     particle.kin_energy.append(forces.kinetic_energy(particle.vel))
                     particle.tot_energy.append(forces.kinetic_energy(particle.vel) + self.potential(diff_vectors))
                     # -------
@@ -167,16 +164,37 @@ class MolecularDynamics:
                     # -------
 
                     previous_position = particle.pos - self.h * particle.vel
-                    previous_position = previous_position % self.length
+                    (particle.trajectory_out).append(new_position)
 
                     new_position = 2 * particle.pos - previous_position + self.force(diff_vectors) * self.h ** 2
-                    (particle.trajectory_out).append(new_position)
-                    new_position = new_position % self.length
                     particle.vel = (new_position - previous_position) / (2 * self.h)
+
+                    new_position = new_position % self.length
 
                     (particle.trajectory).append(new_position)
                     particle.pos = new_position
 
+        elif self.method == 'Verlet_v':
+            list_diff_vectors_t = list_diff_vectors
+            for i, particle in enumerate(self.Particles):
+                diff_vectors = list_diff_vectors_t[i]
+
+                # ------- saving energies first
+                particle.kin_energy.append(forces.kinetic_energy(particle.vel))
+                particle.tot_energy.append(forces.kinetic_energy(particle.vel) + self.potential(diff_vectors))
+                # -------
+
+                new_position = particle.pos + self.h * particle.vel + (self.h ** 2 / 2) * self.force(diff_vectors)
+                new_position = new_position % self.length
+                particle.trajectory.append(new_position)
+                particle.pos = new_position
+
+            list_diff_vectors_th = self.minimum_image_convention()
+            for i, particle in enumerate(self.Particles):
+                diff_vectors_t = list_diff_vectors_t[i]
+                diff_vectors_th = list_diff_vectors_th[i]
+
+                particle.vel += (self.h / 2) * (self.force(diff_vectors_th) + self.force(diff_vectors_t))
 
         elif self.method == 'Euler':
             for i, particle in enumerate(self.Particles):
@@ -205,13 +223,6 @@ class MolecularDynamics:
 
         for t in range(num_steps):
             self.simulation_step()
-            # if (t not in range(9878, 9890)):
-            #     self.simulation_step()
-            # else:
-            #     self.simulation_step()
-            #     for particle in self.Particles:
-            #         print(particle.pos)
-            #         print(particle.vel)
 
         if save_filename is None:
             self.save_filename = "Trajectories.txt"
