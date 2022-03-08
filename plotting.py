@@ -139,7 +139,7 @@ def plot_2D(trajectories, length):
 
     return 0
 
-def plot_3D(trajectories, length):
+def plot_3D(trajectories, length, title=None):
     from mpl_toolkits.mplot3d import Axes3D
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
@@ -179,7 +179,9 @@ def plot_3D(trajectories, length):
     ax.set_ylim3d(0,length)
     ax.set_zlim3d(0,length)
 
-    ax.set_title('Trajectory')
+    if title is None:
+        title = 'Trajectory'
+    ax.set_title(title)
     plt.show()
 
     return 0

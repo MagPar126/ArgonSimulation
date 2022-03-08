@@ -6,6 +6,7 @@ import plotting as plotting
 
 import matplotlib.pyplot as plt
 
+
 class Particle:
     """
         Particle
@@ -24,11 +25,11 @@ class Particle:
         # list for saving all positions also outside the box of particle
         self.trajectory_out = []
         self.trajectory_out.append(self.pos)
-        
+
         # lists for saving all kinetic and total energies
         self.kin_energy = []
         self.tot_energy = []
-        self.tot_vel=[]
+        self.tot_vel = []
         self.tot_vel.append(self.vel)
 
 
@@ -37,14 +38,15 @@ class MolecularDynamics:
     Whole simulation of n particles in a box interacting via Lennard-Jones-potential.
     """
 
-    def __init__(self, rLength, num_particles, time_step, dimension=2, potential='LJ', method='Verlet', new_mic=True): #<-Should add density and temperature somewhere and delete number of particles!!!
+    def __init__(self, rLength, num_particles, time_step, dimension=2, potential='LJ', method='Verlet',
+                 new_mic=True):  # <-Should add density and temperature somewhere and delete number of particles!!!
         self.length = rLength
         self.num_particles = num_particles
         self.h = time_step
         self.dimension = dimension
         self.method = method
         self.new_mic = new_mic
-        
+
         """Should add density and temperature somewhere!!! My personal oppinion is that number density is probably OK? (Not sure what they will expect from us later on...)"""
 
         if potential == 'LJ':
@@ -59,7 +61,6 @@ class MolecularDynamics:
     def initialization(self):
         """
         Initialize N particles at random positions with random velocities.
-
         :param num_particles:
         :param mass:
         :return: 0 if success
@@ -67,46 +68,43 @@ class MolecularDynamics:
 
         self.Particles = []
 
-        positions = random_initial_conditions[0]
-        velocities = random_initial_conditions[1]
+        positions, velocities = self.random_initial_conditions()
 
         # positions = np.array([[4,6,5],[6,6,5]])
         # velocities = np.array([[0.5,0,0.1],[-0.5,0,-0.1]])
         for i in range(self.num_particles):
-            (self.Particles).append(Particle(positions[i,:], velocities[i,:]))
+            (self.Particles).append(Particle(positions[i, :], velocities[i, :]))
             print("pos: {} \t vel: {}".format(self.Particles[i].pos, self.Particles[i].vel))
-            
-            
+
         """ Here has to come the whole sampling and rescalling thingy....Should be just a prescription from lecture, but we need to figure out how many steps we need - i.e. to somehow put a limit of how long the test simulation is supposed to run + how far from equilibrium is too far :)."""
 
         return 0
-    def random_initial_conditions(self): # old "dumm" version
+
+    def random_initial_conditions(self):  # old "dumm" version
         np.random.seed(0)
-        positions = self.length/4 + self.length*0.5 * np.random.rand(self.num_particles, self.dimension)
-        velocities = 2 * self.length/10 * np.random.rand(self.num_particles, self.dimension) - self.length/10
-        return positions,velocities
-    
+        positions = self.length / 4 + self.length * 0.5 * np.random.rand(self.num_particles, self.dimension)
+        velocities = 2 * self.length / 10 * np.random.rand(self.num_particles, self.dimension) - self.length / 10
+        return positions, velocities
+
     def initial_positions_face_centered(self):
         """
         Sets size of the box based on number density and number of particles . Then gives initial positions of atoms in face-centered crystal patern.
         Returns: initial positions of N particles
-
         """
         positions = []
-        
+
         """ Here has to came the face-centered-filling algorithm...+ setting the size of the box (I have an idea written down on paper, will add and try later - Johannes, let me know if you see this sooner than I do that."""
-        
-        
+
         return positions
 
     def initial_maxwellian_velocities(self):
         """
         Returns: non-scaled random maxwellian velocities
-
         """
-        velocities = np.random.normal(size=(self.num_particles,self.dimension)) # Can I do that? Put all direction together?
+        velocities = np.random.normal(
+            size=(self.num_particles, self.dimension))  # Can I do that? Put all direction together?
         return velocities
-        
+
     def minimum_image_convention(self):
         """
         Minimum image convention for all particles.
@@ -120,7 +118,7 @@ class MolecularDynamics:
                 other_particles.remove(particle)
                 loc_diff_vectors = []  # diff vectors for this one particular particle
                 for other_particle in other_particles:
-                    diff_vector = (particle.pos - other_particle.pos + self.length/2) % self.length - self.length/2
+                    diff_vector = (particle.pos - other_particle.pos + self.length / 2) % self.length - self.length / 2
                     loc_diff_vectors.append(diff_vector)
                 diff_vectors.append(loc_diff_vectors)
         else:
@@ -128,10 +126,10 @@ class MolecularDynamics:
             for i, particle in enumerate(self.Particles):
                 other_particles = self.Particles.copy()
                 other_particles.remove(particle)
-                loc_diff_vectors=[] #diff vectors for this one particular particle
+                loc_diff_vectors = []  # diff vectors for this one particular particle
                 for other_particle in other_particles:
-                    copies_distances = [] #list of distances of all copies from the particle
-                    copies_diff_vectors=[] #list of diff vectors of all copies from the particle
+                    copies_distances = []  # list of distances of all copies from the particle
+                    copies_diff_vectors = []  # list of diff vectors of all copies from the particle
 
                     basis = [-1, 0, 1]
                     dims = []
@@ -141,9 +139,10 @@ class MolecularDynamics:
                     image_boxes = np.zeros(dims)
                     it = np.nditer(image_boxes, flags=['multi_index'])
                     for x in it:
-                        displacement=(np.array(it.multi_index)-1)*self.length #displacements of copies in respect to the original one
-                        mirrored_pos = other_particle.pos + displacement #possition of the mirrored particle
-                        diff_vector = particle.pos - mirrored_pos #diff vector of the mirrored particle
+                        displacement = (np.array(
+                            it.multi_index) - 1) * self.length  # displacements of copies in respect to the original one
+                        mirrored_pos = other_particle.pos + displacement  # possition of the mirrored particle
+                        diff_vector = particle.pos - mirrored_pos  # diff vector of the mirrored particle
                         mirrored_distance = np.linalg.norm(diff_vector)
                         copies_distances.append(mirrored_distance)
                         copies_diff_vectors.append(diff_vector)
@@ -168,7 +167,7 @@ class MolecularDynamics:
                     particle.tot_energy.append(forces.kinetic_energy(particle.vel) + self.potential(diff_vectors))
                     # -------
 
-                    if (np.linalg.norm(particle.pos - particle.trajectory[-2])>self.length/2):
+                    if (np.linalg.norm(particle.pos - particle.trajectory[-2]) > self.length / 2):
                         print("Alert!")
                         print("using: ", particle.trajectory_out[-1])
                         print("other than: ", particle.trajectory[-1])
@@ -176,8 +175,10 @@ class MolecularDynamics:
                     else:
                         pos = particle.trajectory[-1]
 
-                    new_position = 2*pos - particle.trajectory[-2] + self.force(diff_vectors) * self.h**2
-                    particle.vel = (new_position - particle.trajectory[-2]) /(2*self.h)
+                    new_position = 2 * pos - particle.trajectory[-2] + self.force(diff_vectors) * self.h ** 2
+                    velocity = (new_position - particle.trajectory[-2]) / (2 * self.h)
+                    particle.vel = velocity
+                    particle.tot_vel.append(velocity)
 
                     (particle.trajectory_out).append(new_position)
                     new_position = new_position % self.length
@@ -195,9 +196,9 @@ class MolecularDynamics:
                     # -------
 
                     previous_position = particle.pos - self.h * particle.vel
-                    (particle.trajectory_out).append(new_position)
 
                     new_position = 2 * particle.pos - previous_position + self.force(diff_vectors) * self.h ** 2
+                    (particle.trajectory_out).append(new_position)
                     particle.vel = (new_position - previous_position) / (2 * self.h)
 
                     new_position = new_position % self.length
@@ -224,11 +225,10 @@ class MolecularDynamics:
             for i, particle in enumerate(self.Particles):
                 diff_vectors_t = list_diff_vectors_t[i]
                 diff_vectors_th = list_diff_vectors_th[i]
-                
-                particle.vel += (self.h / 2) * (self.force(diff_vectors_th) + self.force(diff_vectors_t))
-                #print(particle.vel)
-                particle.tot_vel.append(particle.vel)
-                #print(particle.tot_vel[-1],"\n\n")
+
+                velocity = particle.vel + (self.h / 2) * (self.force(diff_vectors_th) + self.force(diff_vectors_t))
+                particle.vel = velocity
+                particle.tot_vel.append(velocity)
 
         elif self.method == 'Euler':
             for i, particle in enumerate(self.Particles):
@@ -241,32 +241,20 @@ class MolecularDynamics:
 
                 new_position = particle.pos + particle.vel * self.h
                 new_position = new_position % self.length
-                particle.vel += self.h * self.force(diff_vectors)
-                #print(particle.vel)
+                velocity = particle.vel + self.h * self.force(diff_vectors)
+                particle.vel = velocity
 
                 (particle.trajectory).append(new_position)
-                #print("trajectory ",particle.trajectory)
                 particle.pos = new_position
-                particle.tot_vel.append(particle.vel)
-                print("velocity ", particle.tot_vel)
+                (particle.tot_vel).append(velocity)
+
 
         else:
             print("Method for simulation step is not implemented.")
             exit(-1)
 
-
         return 0
-    def plot_velocity(self):
-        
-        velocities = np.zeros((len(self.Particles[0].tot_vel),3))
-        print(np.shape(velocities))
-        for particle in self.Particles:
-            velocities += particle.tot_vel
-            #print(particle.tot_vel)
-        plotting.plot_3D([velocities], self.length)
 
-        
-        
     def simulate(self, num_steps, save_filename=None, save_filename_energies=None):
 
         for t in range(num_steps):
@@ -276,13 +264,13 @@ class MolecularDynamics:
             self.save_filename = "Trajectories.txt"
         else:
             self.save_filename = save_filename
-            
+
         # ----- the same for filename of energies
         if save_filename_energies is None:
             self.save_filename_energies = "Energies.txt"
         else:
             self.save_filename_energies = save_filename_energies
-        
+
         self.energies = self.save_energies(self.save_filename_energies)
         # -----
 
@@ -290,21 +278,21 @@ class MolecularDynamics:
         return 0
 
     def save_trajectories(self, save_filename):
-        
+
         trajectories = []
         for particle in self.Particles:
             trajectories.append(particle.trajectory)
         plotting.save_to_file(save_filename, trajectories, self.length)
-        
+
         return trajectories
-    
+
     def save_energies(self, save_filename):
-        
+
         energies = []
         for particle in self.Particles:
-            energies.append([particle.kin_energy,particle.tot_energy])
+            energies.append([particle.kin_energy, particle.tot_energy])
         plotting.save_energies_to_file(save_filename, energies)
-        
+
         return energies
 
     def plot_trajectories(self):
@@ -319,8 +307,8 @@ class MolecularDynamics:
             print("Dimension bigger or equal than 4. No reasonable method for plotting implemented!")
 
         return 0
-    
-    def plot_energies(self):  #FINISH ME!!!
+
+    def plot_energies(self):  # FINISH ME!!!
         x = np.arange(len(self.energies[0][0]))
         fig, axs = plt.subplots(3)
 
@@ -342,3 +330,11 @@ class MolecularDynamics:
         plt.tight_layout()
         plt.show()
         return 0
+
+    def plot_velocity(self):
+
+        velocities = np.zeros((len(self.Particles[0].tot_vel), 3))
+        for particle in self.Particles:
+            velocities += particle.tot_vel
+        print("Variance of total momentum: ", np.var(velocities, axis=0))
+        plotting.plot_3D([velocities], self.length, title='Momentum conservation')
