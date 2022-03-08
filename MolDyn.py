@@ -37,13 +37,15 @@ class MolecularDynamics:
     Whole simulation of n particles in a box interacting via Lennard-Jones-potential.
     """
 
-    def __init__(self, rLength, num_particles, time_step, dimension=2, potential='LJ', method='Verlet', new_mic=True):
+    def __init__(self, rLength, num_particles, time_step, dimension=2, potential='LJ', method='Verlet', new_mic=True): #<-Should add density and temperature somewhere and delete number of particles!!!
         self.length = rLength
         self.num_particles = num_particles
         self.h = time_step
         self.dimension = dimension
         self.method = method
         self.new_mic = new_mic
+        
+        """Should add density and temperature somewhere!!! My personal oppinion is that number density is probably OK? (Not sure what they will expect from us later on...)"""
 
         if potential == 'LJ':
             self.force = forces.LJ_force
@@ -65,18 +67,46 @@ class MolecularDynamics:
 
         self.Particles = []
 
-        np.random.seed(0)
-        positions = self.length/4 + self.length*0.5 * np.random.rand(self.num_particles, self.dimension)
-        velocities = 2 * self.length/10 * np.random.rand(self.num_particles, self.dimension) - self.length/10
+        positions = random_initial_conditions[0]
+        velocities = random_initial_conditions[1]
 
         # positions = np.array([[4,6,5],[6,6,5]])
         # velocities = np.array([[0.5,0,0.1],[-0.5,0,-0.1]])
         for i in range(self.num_particles):
             (self.Particles).append(Particle(positions[i,:], velocities[i,:]))
             print("pos: {} \t vel: {}".format(self.Particles[i].pos, self.Particles[i].vel))
+            
+            
+        """ Here has to come the whole sampling and rescalling thingy....Should be just a prescription from lecture, but we need to figure out how many steps we need - i.e. to somehow put a limit of how long the test simulation is supposed to run + how far from equilibrium is too far :)."""
 
         return 0
+    def random_initial_conditions(self): # old "dumm" version
+        np.random.seed(0)
+        positions = self.length/4 + self.length*0.5 * np.random.rand(self.num_particles, self.dimension)
+        velocities = 2 * self.length/10 * np.random.rand(self.num_particles, self.dimension) - self.length/10
+        return positions,velocities
+    
+    def initial_positions_face_centered(self):
+        """
+        Sets size of the box based on number density and number of particles . Then gives initial positions of atoms in face-centered crystal patern.
+        Returns: initial positions of N particles
 
+        """
+        positions = []
+        
+        """ Here has to came the face-centered-filling algorithm...+ setting the size of the box (I have an idea written down on paper, will add and try later - Johannes, let me know if you see this sooner than I do that."""
+        
+        
+        return positions
+
+    def initial_maxwellian_velocities(self):
+        """
+        Returns: non-scaled random maxwellian velocities
+
+        """
+        velocities = np.random.normal(size=(self.num_particles,self.dimension)) # Can I do that? Put all direction together?
+        return velocities
+        
     def minimum_image_convention(self):
         """
         Minimum image convention for all particles.
