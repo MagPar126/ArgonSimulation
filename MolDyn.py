@@ -38,16 +38,23 @@ class MolecularDynamics:
     Whole simulation of n particles in a box interacting via Lennard-Jones-potential.
     """
 
-    def __init__(self, rLength, num_particles, time_step, dimension=2, potential='LJ', method='Verlet',
-                 new_mic=True):  # <-Should add density and temperature somewhere and delete number of particles!!!
-        self.length = rLength
-        self.num_particles = num_particles
-        self.h = time_step
+    def __init__(self, rho, time_step=0.001, temperature=100, dimension=3, num_unit_cells=3,  potential='LJ', method='Verlet',
+                 new_mic=True):
+        self.rho = rho
+        self.temperature = temperature
+        self.num_unit_cells = num_unit_cells
         self.dimension = dimension
+        self.num_particles = int(self.num_unit_cells**self.dimension * (2**self.dimension / 2))
+        print("Num particles: ", self.num_particles)
+        # system length
+        self.length = (self.num_particles/self.rho)**(1/self.dimension)
+        print("Lenght: ", self.length)
+        # length of the unit cell (as a cube)
+        self.unit_size = self.length/(2 * (self.num_unit_cells))
+        print("unit size: ", self.unit_size)
+        self.h = time_step
         self.method = method
         self.new_mic = new_mic
-
-        """Should add density and temperature somewhere!!! My personal oppinion is that number density is probably OK? (Not sure what they will expect from us later on...)"""
 
         if potential == 'LJ':
             self.force = forces.LJ_force
@@ -68,15 +75,44 @@ class MolecularDynamics:
 
         self.Particles = []
 
-        positions, velocities = self.random_initial_conditions()
+        #positions, velocities = self.random_initial_conditions()
 
-        # positions = np.array([[4,6,5],[6,6,5]])
-        # velocities = np.array([[0.5,0,0.1],[-0.5,0,-0.1]])
-        for i in range(self.num_particles):
-            (self.Particles).append(Particle(positions[i, :], velocities[i, :]))
-            print("pos: {} \t vel: {}".format(self.Particles[i].pos, self.Particles[i].vel))
+        positions = self.initial_positions_face_centered()
+        velocities = self.initial_maxwellian_velocities()
 
-        """ Here has to come the whole sampling and rescalling thingy....Should be just a prescription from lecture, but we need to figure out how many steps we need - i.e. to somehow put a limit of how long the test simulation is supposed to run + how far from equilibrium is too far :)."""
+        sim_time = 0.5
+        num_step = int(sim_time/self.h)
+
+        print("Find equilibrium...")
+        criterion = 0.05
+        scale_factor = 1.0
+        j = 0
+        while True:
+            for i in range(self.num_particles):
+                (self.Particles).append(Particle(positions[i, :], scale_factor * velocities[i, :]))
+
+            for i in range(num_step):
+                self.simulation_step()
+
+            tot_kin = 0
+            for particle in self.Particles:
+                tot_kin += particle.kin_energy[-1]
+
+            scale_factor *= np.sqrt((self.num_particles - 1) * 3 * self.temperature / (2*tot_kin * 119.8))
+            print(scale_factor)
+            if np.abs(scale_factor - 1) > criterion:
+                j +=1
+                del self.Particles
+                self.Particles = []
+            else:
+                del self.Particles
+                self.Particles = []
+                for i in range(self.num_particles):
+                    (self.Particles).append(Particle(positions[i, :], scale_factor * velocities[i, :]))
+                    # print("pos: {} \t vel: {}".format(self.Particles[i].pos, self.Particles[i].vel))
+                break
+
+        print("Found it! It took {} recursions.".format(j))
 
         return 0
 
@@ -91,9 +127,53 @@ class MolecularDynamics:
         Sets size of the box based on number density and number of particles . Then gives initial positions of atoms in face-centered crystal patern.
         Returns: initial positions of N particles
         """
+        l = self.unit_size
+        initial_pos = l/2 * np.ones(self.dimension)
         positions = []
 
-        """ Here has to came the face-centered-filling algorithm...+ setting the size of the box (I have an idea written down on paper, will add and try later - Johannes, let me know if you see this sooner than I do that."""
+        basis = range(self.num_unit_cells)
+        dims = []
+        for j in range(self.dimension):
+            dims.append(len(basis))
+
+        image_boxes = np.zeros(dims)
+        it = np.nditer(image_boxes, flags=['multi_index'])
+        for x in it:
+            displacement = np.array(
+                it.multi_index) * 2 * l  # displacements of copies in respect to the original one
+            positions.append(initial_pos + displacement)
+
+        basis = [0,1]
+        dims = []
+        for j in range(self.dimension):
+            dims.append(len(basis))
+
+        image_boxes = np.zeros(dims)
+        it = np.nditer(image_boxes, flags=['multi_index'])
+        dvs = []
+        for x in it:
+            displacement = np.array(
+                it.multi_index)  # displacements of copies in respect to the original one
+            if (np.abs(np.linalg.norm(displacement)**2 - (self.dimension - 1)) < 1e-6):
+                dvs.append(l*displacement)
+
+        basis_pos = positions
+        filling = [(position + dv ) % self.length for position in positions for dv in dvs]
+
+        positions = np.array(basis_pos + filling)
+
+        # fcc visualization
+        # ar = np.array(positions)
+        # print(np.amax(ar, axis=0))
+
+        # fig = plt.figure(figsize=(12, 12))
+        # ax = fig.add_subplot(projection='3d')
+        # ax.set_xlim(0,self.length)
+        # ax.set_ylim(0,self.length)
+        # ax.set_zlim(0,self.length)
+
+        # ax.scatter(ar[:, 0], ar[:, 1], ar[:, 2])
+        # plt.show()
 
         return positions
 
@@ -101,7 +181,7 @@ class MolecularDynamics:
         """
         Returns: non-scaled random maxwellian velocities
         """
-        velocities = np.random.normal(
+        velocities = np.random.normal( scale = 2 * self.temperature/119.8, # for argon
             size=(self.num_particles, self.dimension))  # Can I do that? Put all direction together?
         return velocities
 
@@ -255,7 +335,9 @@ class MolecularDynamics:
 
         return 0
 
-    def simulate(self, num_steps, save_filename=None, save_filename_energies=None):
+    def simulate(self, num_time_intervals, save_filename=None, save_filename_energies=None):
+
+        num_steps = int(num_time_intervals/self.h)
 
         for t in range(num_steps):
             self.simulation_step()
