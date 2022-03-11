@@ -80,16 +80,20 @@ class MolecularDynamics:
         positions = self.initial_positions_face_centered()
         velocities = self.initial_maxwellian_velocities()
 
-        sim_time = 0.5
+        sim_time = 0.1 #together with precision 0.05 see
         num_step = int(sim_time/self.h)
 
         print("Find equilibrium...")
-        criterion = 0.05
+        criterion = 0.1 #seems like 0.05 is quite a reachable precision
         scale_factor = 1.0
         j = 0
+        for i in range(self.num_particles):
+                (self.Particles).append(Particle(positions[i, :], velocities[i, :]))
         while True:
-            for i in range(self.num_particles):
-                (self.Particles).append(Particle(positions[i, :], scale_factor * velocities[i, :]))
+            #velocities = scale_factor*velocities
+            #for i in range(self.num_particles):
+                #(self.Particles).append(Particle(positions[i, :], scale_factor * velocities[i, :]))
+                #print(self.Particles[i].vel)
 
             for i in range(num_step):
                 self.simulation_step()
@@ -102,14 +106,10 @@ class MolecularDynamics:
             print(scale_factor)
             if np.abs(scale_factor - 1) > criterion:
                 j +=1
-                del self.Particles
-                self.Particles = []
+                for particle in self.Particles:
+                    particle.vel *= scale_factor
+                
             else:
-                del self.Particles
-                self.Particles = []
-                for i in range(self.num_particles):
-                    (self.Particles).append(Particle(positions[i, :], scale_factor * velocities[i, :]))
-                    # print("pos: {} \t vel: {}".format(self.Particles[i].pos, self.Particles[i].vel))
                 break
 
         print("Found it! It took {} recursions.".format(j))
@@ -181,6 +181,12 @@ class MolecularDynamics:
         """
         Returns: non-scaled random maxwellian velocities
         """
+        #velocities = np.zeros((self.num_particles,self.dimension))
+        #for i in range(self.dimension):
+        #    vel = np.random.normal( scale = 2 * self.temperature/119.8, # for argon
+        #    size=self.num_particles)
+        #    for j in range(self.num_particles):
+        #        velocities[j,i]=vel[j]
         velocities = np.random.normal( scale = 2 * self.temperature/119.8, # for argon
             size=(self.num_particles, self.dimension))  # Can I do that? Put all direction together?
         return velocities
@@ -341,6 +347,8 @@ class MolecularDynamics:
 
         for t in range(num_steps):
             self.simulation_step()
+            
+        print("Done simulating! Now plotting.")
 
         if save_filename is None:
             self.save_filename = "Trajectories.txt"
@@ -399,7 +407,6 @@ class MolecularDynamics:
             axs[0].plot(x, self.energies[particle][0], label='Particle ' + str(particle), linewidth=2.5)
             axs[1].plot(x, self.energies[particle][1], label='Particle ' + str(particle), linewidth=2.5)
             energy += np.array(self.energies[particle][1])
-
         axs[2].plot(x, energy)
 
         axs[0].set_title('Kinetic Energies')
