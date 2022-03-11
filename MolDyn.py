@@ -38,7 +38,7 @@ class MolecularDynamics:
     Whole simulation of n particles in a box interacting via Lennard-Jones-potential.
     """
 
-    def __init__(self, rho, time_step=0.001, temperature=100, dimension=3, num_unit_cells=3,  potential='LJ', method='Verlet',
+    def __init__(self, rho, time_step=0.001, temperature=100, dimension=3, num_unit_cells=3,  potential='LJ', method='Verlet_v',
                  new_mic=True):
         self.rho = rho
         self.temperature = temperature
@@ -67,9 +67,9 @@ class MolecularDynamics:
 
     def initialization(self):
         """
-        Initialize N particles at random positions with random velocities.
-        :param num_particles:
-        :param mass:
+        Initialize N particles at the fcc positions with random maxwellian velocities.
+        Drive the system to the equilibrium via rescaling the velocities for several timestamps.
+
         :return: 0 if success
         """
 
@@ -108,8 +108,10 @@ class MolecularDynamics:
                 j +=1
                 for particle in self.Particles:
                     particle.vel *= scale_factor
-                
             else:
+                for particle in self.Particles:
+                    particle.trajectory, particle.trajectory_out, particle.tot_energy, particle.tot_vel, particle.kin_energy =\
+                                [particle.trajectory[-1]], [particle.trajectory_out[-1]], [], [particle.tot_vel[-1]], []
                 break
 
         print("Found it! It took {} recursions.".format(j))
@@ -188,7 +190,13 @@ class MolecularDynamics:
         #    for j in range(self.num_particles):
         #        velocities[j,i]=vel[j]
         velocities = np.random.normal( scale = 2 * self.temperature/119.8, # for argon
-            size=(self.num_particles, self.dimension))  # Can I do that? Put all direction together?
+            size=(self.num_particles, self.dimension))
+
+        plt.hist(velocities[:,0])
+        plt.hist(velocities[:,1])
+        plt.hist(velocities[:,2])
+        plt.show()
+
         return velocities
 
     def minimum_image_convention(self):
@@ -426,4 +434,5 @@ class MolecularDynamics:
         for particle in self.Particles:
             velocities += particle.tot_vel
         print("Variance of total momentum: ", np.var(velocities, axis=0))
+        print("Mean of total momentum: ", np.mean(velocities, axis=0))
         plotting.plot_3D([velocities], self.length, title='Momentum conservation')
