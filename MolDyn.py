@@ -409,10 +409,10 @@ class MolecularDynamics:
 
 
         if plot == True:
-            filenamePC = "PC_rho_" + str(self.rho).replace('.', '') + "_T=" + str(self.temperature/119.8).replace('.', '')\
+            filenamePC = "PC_rho=" + str(self.rho).replace('.', '') + "_T=" + str(self.temperature/119.8).replace('.', '')\
                             + "_N=" + str(self.num_particles) + ".txt"
             plotting.plot_PC(filenamePC)
-            filenamePP = "PP_rho_" + str(self.rho).replace('.', '') + "_T=" + str(self.temperature / 119.8).replace('.','')\
+            filenamePP = "PP_rho=" + str(self.rho).replace('.', '') + "_T=" + str(self.temperature / 119.8).replace('.','')\
                             + "_N=" + str(self.num_particles) + ".txt"
             plotting.plot_PP(filenamePP)
 
@@ -426,10 +426,10 @@ class MolecularDynamics:
         for i in range(len(diff_vectors)):
             for j in range(i, len(diff_vectors[i])):
                 r = np.linalg.norm(diff_vectors[i][j])
-                pressure -= (self.rho/(3*self.num_particles)) * (1/2) * 4 * (12*r**(-13) - 6*r**(-7))
+                pressure += (self.rho/(3*self.num_particles)) * (1/2) * 4 * (12*r**(-13) - 6*r**(-7))
 
         if filenamePP == None:
-            filenamePP = "PP_rho_" + str(self.rho).replace('.', '') + "_T=" + str(self.temperature / 119.8).replace('.','')\
+            filenamePP = "PP_rho=" + str(self.rho).replace('.', '') + "_T=" + str(self.temperature / 119.8).replace('.','')\
                             + "_N=" + str(self.num_particles) + ".txt"
 
         try:
