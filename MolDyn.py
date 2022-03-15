@@ -404,7 +404,7 @@ class MolecularDynamics:
 
         for i in range(num_init):
             print("\n\nSimulation {} out of {}".format(i+1, num_init))
-            self.reset()
+            if i!=0: self.reset()
             self.simulate(num_time_intervals, save_filename, save_filename_energies)
 
 
