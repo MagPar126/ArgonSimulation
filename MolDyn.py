@@ -192,10 +192,16 @@ class MolecularDynamics:
         velocities = np.random.normal( scale = 2 * self.temperature/119.8, # for argon
             size=(self.num_particles, self.dimension))
 
-        plt.hist(velocities[:,0])
-        plt.hist(velocities[:,1])
-        plt.hist(velocities[:,2])
+
+        fig,axs = plt.subplots(nrows=3, ncols=1)
+        axs[0].hist(velocities[:,0])
+        axs[1].hist(velocities[:,1])
+        axs[2].hist(velocities[:,2])
+
         plt.show()
+        from scipy.stats import skew
+        print("means: \t {0:.3f}\t {1:.3f}\t {2:.3f}".format(np.mean(velocities[:,0]), np.mean(velocities[:,1]), np.mean(velocities[:,2])))
+        print("skewness: {0:.3f}\t {1:.3f}\t {2:.3f}".format(skew(velocities[:,0]), skew(velocities[:,1]), skew(velocities[:,2])))
 
         return velocities
 
