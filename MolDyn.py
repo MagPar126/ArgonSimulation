@@ -38,9 +38,11 @@ class MolecularDynamics:
     Whole simulation of n particles in a box interacting via Lennard-Jones-potential.
     """
 
-    def __init__(self, rho, time_step=0.001, temperature=100, dimension=3, num_unit_cells=3,  potential='LJ', method='Verlet_v',
+    ######## INTIALIZATION AND RESETTING
+    def __init__(self, rho, time_step=0.001, temperature=1*119.8, dimension=3, num_unit_cells=3,  potential='LJ', method='Verlet_v',
                  new_mic=True):
         self.rho = rho
+
         self.temperature = temperature
         self.num_unit_cells = num_unit_cells
         self.dimension = dimension
@@ -117,6 +119,15 @@ class MolecularDynamics:
         print("Found it! It took {} recursions.".format(j))
 
         return 0
+
+    def reset(self):
+        if self.potential == forces.LJ_potential_energy:
+            potential = 'LJ'
+        else:
+            print("Wrong wording or force not implemented yet!")
+            exit(-1)
+        self.__init__(self.rho, self.h, self.temperature, self.dimension, self.num_unit_cells, potential, self.method,
+                      self.new_mic)
 
     def random_initial_conditions(self):  # old "dumm" version
         np.random.seed(0)
@@ -205,6 +216,7 @@ class MolecularDynamics:
 
         return velocities
 
+    ########## SIMULATION
     def minimum_image_convention(self):
         """
         Minimum image convention for all particles.
@@ -359,8 +371,15 @@ class MolecularDynamics:
 
         num_steps = int(num_time_intervals/self.h)
 
+        # number measurements per simulation
+        n_meas = 5
+        t_stamps = np.zeros(n_meas, int)
+        for i in range(n_meas):
+            t_stamps[i] = int(num_steps/2 + i*(num_steps/(2*n_meas)))
         for t in range(num_steps):
             self.simulation_step()
+            if t in t_stamps:
+                self.measurement()
             
         print("Done simulating! Now plotting.")
 
@@ -381,6 +400,74 @@ class MolecularDynamics:
         self.save_trajectories(self.save_filename)
         return 0
 
+    def stat_properties(self, num_init, num_time_intervals, save_filename=None, save_filename_energies=None, plot=False):
+
+        for i in range(num_init):
+            print("\n\nSimulation {} out of {}".format(i+1, num_init))
+            self.reset()
+            self.simulate(num_time_intervals, save_filename, save_filename_energies)
+
+
+        if plot == True:
+            filenamePC = "PC_rho_" + str(self.rho).replace('.', '') + "_T=" + str(self.temperature/119.8).replace('.', '')\
+                            + "_N=" + str(self.num_particles) + ".txt"
+            plotting.plot_PC(filenamePC)
+            filenamePP = "PP_rho_" + str(self.rho).replace('.', '') + "_T=" + str(self.temperature / 119.8).replace('.','')\
+                            + "_N=" + str(self.num_particles) + ".txt"
+            plotting.plot_PP(filenamePP)
+
+
+
+    ########## MEASURE AND SAVE
+    def measure_pressure(self, filenamePP=None):
+        diff_vectors = self.minimum_image_convention()
+
+        pressure = self.rho*self.temperature/119.8
+        for i in range(len(diff_vectors)):
+            for j in range(i, len(diff_vectors[i])):
+                r = np.linalg.norm(diff_vectors[i][j])
+                pressure -= (self.rho/(3*self.num_particles)) * (1/2) * 4 * (12*r**(-13) - 6*r**(-7))
+
+        if filenamePP == None:
+            filenamePP = "PP_rho_" + str(self.rho).replace('.', '') + "_T=" + str(self.temperature / 119.8).replace('.','')\
+                            + "_N=" + str(self.num_particles) + ".txt"
+
+        try:
+            file = open(filenamePP, "a")
+        except IOError:
+            print("Could not open file.")
+
+        file.write(str(pressure))
+        file.write("\n")
+        file.close()
+
+    def measure_corr(self, filenamePC=None):
+        diff_vectors = self.minimum_image_convention()
+        lengths = []
+        for p in diff_vectors:
+            for dv in p:
+                lengths.append(np.linalg.norm(dv))
+
+        if filenamePC == None:
+            filenamePC = "PC_rho_" + str(self.rho).replace('.', '') + "_T=" + str(self.temperature/119.8).replace('.', '')\
+                            + "_N=" + str(self.num_particles) + ".txt"
+
+        try:
+            file = open(filenamePC, "a")
+        except IOError:
+            print("Could not open file.")
+
+        file.write(str(lengths))
+        file.write("\n")
+        file.close()
+
+
+
+    def measurement(self):
+        self.measure_corr()
+        self.measure_pressure()
+
+    ########## SAVE RESULTS
     def save_trajectories(self, save_filename):
 
         trajectories = []
@@ -399,6 +486,7 @@ class MolecularDynamics:
 
         return energies
 
+    ########### PLOTTING
     def plot_trajectories(self):
         trajectories = self.save_trajectories(self.save_filename)
         if self.dimension == 1:
