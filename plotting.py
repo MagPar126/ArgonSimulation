@@ -222,5 +222,73 @@ def plot_energies(name_of_file):  #FINISH ME!!!
     plt.show()
     return 0
 
+def plot_PC(name_of_file, length, dimension):
+    try:
+        file = open(name_of_file, "r")
+    except IOError:
+        print("Could not open file.")
+    distances = []
+    for line in file:
+        distance_str = file.readline()
+        distance_str = distance_str.rstrip(' \n')
+        distance_str = distance_str.lstrip('[ ')
+        distance_str = distance_str.rstrip(' ]')
+        distance = distance_str.split(",")
+        distance = np.array(distance, dtype=float)
+        distances.append(distance)
+
+    distances = np.array(distances)
+    hist, bin_edges = np.histogram(distances, bins=20, range=(0,np.sqrt(dimension)*length))
+
+    V = length**dimension
+    N = distances.shape[0]
+
+    hist = np.array(hist, dtype=float)
+
+    for i, n in enumerate(hist):
+        hist[i] = (2*V/(N*(N-1))) * n/(4*np.pi * ((bin_edges[i+1] + bin_edges[i])/2)**2 * (bin_edges[i+1] - bin_edges[i]))
+
+    fig, ax = plt.subplots()
+    ax.bar(bin_edges[:-1], hist, width=(bin_edges[1:] - bin_edges[:-1]), align='edge')
+
+    ax.set_xlabel("r", fontsize=16)
+    ax.set_ylabel("g(r)", fontsize=16)
+    ax.set_title("Pair Correlation", fontsize=18)
+
+    plt.show()
+
+    file.close()
+
+def plot_PP(name_of_file):
+    try:
+        file = open(name_of_file, "r")
+    except IOError:
+        print("Could not open file.")
+    pressure = []
+    for line in file:
+        p = file.readline()
+        p = p.rstrip(" \n")
+        pressure.append(float(p))
+
+    pressure = np.array(pressure)
+    mean = pressure.mean()
+    var = pressure.var()
+
+    hist, bin_edges = np.histogram(pressure, bins=20, density=True)
+
+    fig, ax = plt.subplots()
+    ax.bar(bin_edges[:-1], hist, width=(bin_edges[1:] - bin_edges[:-1]), align='edge')
+
+    ax.set_xlabel("P", fontsize=16)
+    ax.set_ylabel(r"$\rho(p)$", fontsize=16)
+    ax.set_title("Pressure, mean={0:.3f} var={1:.3f}".format(mean, var), fontsize=18)
+
+    plt.show()
+
+    file.close()
+
+
+
+
 
     

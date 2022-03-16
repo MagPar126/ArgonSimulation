@@ -204,12 +204,12 @@ class MolecularDynamics:
             size=(self.num_particles, self.dimension))
 
 
-        fig,axs = plt.subplots(nrows=3, ncols=1)
-        axs[0].hist(velocities[:,0])
-        axs[1].hist(velocities[:,1])
-        axs[2].hist(velocities[:,2])
-
-        plt.show()
+        # fig,axs = plt.subplots(nrows=3, ncols=1)
+        # axs[0].hist(velocities[:,0])
+        # axs[1].hist(velocities[:,1])
+        # axs[2].hist(velocities[:,2])
+#
+        # plt.show()
         from scipy.stats import skew
         print("means: \t {0:.3f}\t {1:.3f}\t {2:.3f}".format(np.mean(velocities[:,0]), np.mean(velocities[:,1]), np.mean(velocities[:,2])))
         print("skewness: {0:.3f}\t {1:.3f}\t {2:.3f}".format(skew(velocities[:,0]), skew(velocities[:,1]), skew(velocities[:,2])))
@@ -406,12 +406,13 @@ class MolecularDynamics:
             print("\n\nSimulation {} out of {}".format(i+1, num_init))
             if i!=0: self.reset()
             self.simulate(num_time_intervals, save_filename, save_filename_energies)
+            self.plot_trajectories()
 
 
         if plot == True:
             filenamePC = "PC_rho=" + str(self.rho).replace('.', '') + "_T=" + str(self.temperature/119.8).replace('.', '')\
                             + "_N=" + str(self.num_particles) + ".txt"
-            plotting.plot_PC(filenamePC)
+            plotting.plot_PC(filenamePC, self.length, self.dimension)
             filenamePP = "PP_rho=" + str(self.rho).replace('.', '') + "_T=" + str(self.temperature / 119.8).replace('.','')\
                             + "_N=" + str(self.num_particles) + ".txt"
             plotting.plot_PP(filenamePP)
@@ -449,7 +450,7 @@ class MolecularDynamics:
                 lengths.append(np.linalg.norm(dv))
 
         if filenamePC == None:
-            filenamePC = "PC_rho_" + str(self.rho).replace('.', '') + "_T=" + str(self.temperature/119.8).replace('.', '')\
+            filenamePC = "PC_rho=" + str(self.rho).replace('.', '') + "_T=" + str(self.temperature/119.8).replace('.', '')\
                             + "_N=" + str(self.num_particles) + ".txt"
 
         try:
@@ -460,8 +461,6 @@ class MolecularDynamics:
         file.write(str(lengths))
         file.write("\n")
         file.close()
-
-
 
     def measurement(self):
         self.measure_corr()
