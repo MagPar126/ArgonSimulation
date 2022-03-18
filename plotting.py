@@ -222,34 +222,52 @@ def plot_energies(name_of_file):  #FINISH ME!!!
     plt.show()
     return 0
 
-def plot_PC(name_of_file, length, dimension):
+def plot_PC(name_of_file, length, dimension, num_particles):
     try:
         file = open(name_of_file, "r")
     except IOError:
         print("Could not open file.")
+    file.seek(0)
     distances = []
-    for line in file:
-        distance_str = file.readline()
-        distance_str = distance_str.rstrip(' \n')
+    i=0
+    lines = file.read().split('\n')
+    del lines[-1]
+    for line in lines:
+        i+=1
+        #distance_str = file.readline()
+        distance_str = line
         distance_str = distance_str.lstrip('[ ')
         distance_str = distance_str.rstrip(' ]')
         distance = distance_str.split(",")
         distance = np.array(distance, dtype=float)
         distances.append(distance)
-
-    distances = np.array(distances)
-    hist, bin_edges = np.histogram(distances, bins=20, range=(0,np.sqrt(dimension)*length))
-
+    
+    file.close()
+    
+    histograms = []
     V = length**dimension
-    N = distances.shape[0]
+    N = num_particles
 
-    hist = np.array(hist, dtype=float)
+    for distance in distances:
+        hist, bin_edges = np.histogram(distance, bins=100, range=(0,np.sqrt(dimension)*length))
+        histograms.append(hist)
+    final = np.zeros(histograms[0].shape)
+    print(N)
+    
+    for hist in histograms:
+        final += hist
 
-    for i, n in enumerate(hist):
-        hist[i] = (2*V/(N*(N-1))) * n/(4*np.pi * ((bin_edges[i+1] + bin_edges[i])/2)**2 * (bin_edges[i+1] - bin_edges[i]))
+    final = final/len(histograms)        
 
+    final = np.array(final, dtype=float)
+
+    for i, n in enumerate(final):
+        
+        final[i] = (2*V/(N*(N-1))) * n/(4*np.pi * (((bin_edges[i+1] + bin_edges[i])/2)**2 * (bin_edges[i+1] - bin_edges[i])))
+
+        
     fig, ax = plt.subplots()
-    ax.bar(bin_edges[:-1], hist, width=(bin_edges[1:] - bin_edges[:-1]), align='edge')
+    ax.bar(bin_edges[:-1], final, width=(bin_edges[1:] - bin_edges[:-1]), align='edge')
 
     ax.set_xlabel("r", fontsize=16)
     ax.set_ylabel("g(r)", fontsize=16)
@@ -264,9 +282,12 @@ def plot_PP(name_of_file):
         file = open(name_of_file, "r")
     except IOError:
         print("Could not open file.")
+    file.seek(0)
     pressure = []
-    for line in file:
-        p = file.readline()
+    lines = file.read().split('\n')
+    del lines[-1]
+    for line in lines:
+        p = line
         p = p.rstrip(" \n")
         pressure.append(float(p))
 

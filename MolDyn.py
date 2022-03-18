@@ -412,7 +412,7 @@ class MolecularDynamics:
         if plot == True:
             filenamePC = "PC_rho=" + str(self.rho).replace('.', '') + "_T=" + str(self.temperature/119.8).replace('.', '')\
                             + "_N=" + str(self.num_particles) + ".txt"
-            plotting.plot_PC(filenamePC, self.length, self.dimension)
+            plotting.plot_PC(filenamePC, self.length, self.dimension,self.num_particles)
             filenamePP = "PP_rho=" + str(self.rho).replace('.', '') + "_T=" + str(self.temperature / 119.8).replace('.','')\
                             + "_N=" + str(self.num_particles) + ".txt"
             plotting.plot_PP(filenamePP)
