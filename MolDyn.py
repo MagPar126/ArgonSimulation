@@ -383,7 +383,7 @@ class MolecularDynamics:
 
         # ----- the same for filename of energies
         if save_filename_energies is None:
-            self.save_filename_energies = = "Energies_rho=" + str(self.rho).replace('.', '') + "_T=" + str(self.temperature/119.8).replace('.', '')\
+            self.save_filename_energies = "Energies_rho=" + str(self.rho).replace('.', '') + "_T=" + str(self.temperature/119.8).replace('.', '')\
                             + "_N=" + str(self.num_particles) + ".txt"
         else:
             self.save_filename_energies = save_filename_energies

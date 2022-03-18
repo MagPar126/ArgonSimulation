@@ -48,7 +48,7 @@ def save_to_file(name_of_file, trajectories, length):
     number_of_steps = len(trajectories[0])
     dimension = len(trajectories[0][0])
     file = open(name_of_file,"w")
-    file.write("%d %d %d %d\n" %(number_of_particles,number_of_steps,dimension, length))
+    file.write("%d %d %d %f\n" %(number_of_particles,number_of_steps,dimension, length))
     for particle in range(number_of_particles):
         for step in range(number_of_steps):
             for i in range(dimension):
