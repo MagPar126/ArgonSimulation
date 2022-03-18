@@ -249,7 +249,7 @@ def plot_PC(name_of_file, length, dimension, num_particles):
     N = num_particles
 
     for distance in distances:
-        hist, bin_edges = np.histogram(distance, bins=100, range=(0,np.sqrt(dimension)*length))
+        hist, bin_edges = np.histogram(distance, bins=150, range=(0,length/2))
         histograms.append(hist)
     final = np.zeros(histograms[0].shape)
     print(N)
@@ -262,13 +262,12 @@ def plot_PC(name_of_file, length, dimension, num_particles):
     final = np.array(final, dtype=float)
 
     for i, n in enumerate(final):
-        
-        final[i] = (2*V/(N*(N-1))) * n/(4*np.pi * (((bin_edges[i+1] + bin_edges[i])/2)**2 * (bin_edges[i+1] - bin_edges[i])))
+        final[i] = (V/(N*(N-1))) * n/(4*np.pi *(((bin_edges[i+1] + bin_edges[i])/2)**(2) * (bin_edges[i+1] - bin_edges[i])))
 
         
     fig, ax = plt.subplots()
     ax.bar(bin_edges[:-1], final, width=(bin_edges[1:] - bin_edges[:-1]), align='edge')
-
+    ax.set_xlim(0,length/2)
     ax.set_xlabel("r", fontsize=16)
     ax.set_ylabel("g(r)", fontsize=16)
     ax.set_title("Pair Correlation", fontsize=18)

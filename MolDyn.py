@@ -104,7 +104,7 @@ class MolecularDynamics:
             for particle in self.Particles:
                 tot_kin += particle.kin_energy[-1]
 
-            scale_factor *= np.sqrt((self.num_particles - 1) * 3 * self.temperature / (2*tot_kin * 119.8))
+            scale_factor = np.sqrt((self.num_particles - 1) * 3 * self.temperature / (2*tot_kin * 119.8))
             print(scale_factor)
             if np.abs(scale_factor - 1) > criterion:
                 j +=1
@@ -194,26 +194,38 @@ class MolecularDynamics:
         """
         Returns: non-scaled random maxwellian velocities
         """
-        #velocities = np.zeros((self.num_particles,self.dimension))
-        #for i in range(self.dimension):
-        #    vel = np.random.normal( scale = 2 * self.temperature/119.8, # for argon
-        #    size=self.num_particles)
-        #    for j in range(self.num_particles):
-        #        velocities[j,i]=vel[j]
+        velocities = np.zeros((self.num_particles,self.dimension))
+        """for i in range(self.dimension):
+            vel = np.random.normal( scale = 2 * self.temperature/119.8, # for argon
+            size=self.num_particles)
+            for j in range(self.num_particles):
+                velocities[j,i]=vel[j]"""
         velocities = np.random.normal( scale = 2 * self.temperature/119.8, # for argon
             size=(self.num_particles, self.dimension))
 
 
-        # fig,axs = plt.subplots(nrows=3, ncols=1)
-        # axs[0].hist(velocities[:,0])
-        # axs[1].hist(velocities[:,1])
-        # axs[2].hist(velocities[:,2])
+        """fig,axs = plt.subplots(nrows=3, ncols=1)
+        axs[0].hist(velocities[:,0])
+        axs[1].hist(velocities[:,1])
+        axs[2].hist(velocities[:,2])"""
 #
-        # plt.show()
+        plt.show()
+    
         from scipy.stats import skew
+        """print("means: \t {0:.3f}\t {1:.3f}\t {2:.3f}".format(np.mean(velocities[:,0]), np.mean(velocities[:,1]), np.mean(velocities[:,2])))
+        print("skewness: {0:.3f}\t {1:.3f}\t {2:.3f}".format(skew(velocities[:,0]), skew(velocities[:,1]), skew(velocities[:,2])))"""
+        
+        total_vel_x = sum(velocities[:,0])
+        total_vel_y = sum(velocities[:,1])
+        total_vel_z = sum(velocities[:,2])
+        
+        for i,v in enumerate(velocities):
+            velocities[i,0] = v[0]  - total_vel_x/self.num_particles
+            velocities[i,1]  = v[1] - total_vel_y/self.num_particles
+            velocities[i,2]  = v[2] - total_vel_z/self.num_particles
+            
         print("means: \t {0:.3f}\t {1:.3f}\t {2:.3f}".format(np.mean(velocities[:,0]), np.mean(velocities[:,1]), np.mean(velocities[:,2])))
         print("skewness: {0:.3f}\t {1:.3f}\t {2:.3f}".format(skew(velocities[:,0]), skew(velocities[:,1]), skew(velocities[:,2])))
-
         return velocities
 
     ########## SIMULATION
