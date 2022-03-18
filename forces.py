@@ -1,8 +1,15 @@
+"""
+@authors: Magdalena and Johannes
+
+Functions for calculating different forces and energies of the simulated system.
+
+"""
+
 import numpy as np
 
 def LJ_force(diff_vectors):
     """
-    Calculate the force of the Lennard-Jones potential given a number of relative positions.
+    Calculates the force of the Lennard-Jones potential on one particle from a given a number of relative positions.
 
     :param diff_vectors:
     :return: Force vector.
@@ -16,10 +23,22 @@ def LJ_force(diff_vectors):
     return F
 
 def kinetic_energy(velocity):
+    """
+    Calculates the classical kinetic energy of one particle from a given velocity.
+
+    :param velocity:
+    :return: Kinetic energy.
+    """
     kin_energy = 0.5*(np.linalg.norm(velocity)**2)
     return kin_energy
 
 def LJ_potential_energy(diff_vectors):
+    """
+    Calculates the Lennard-Jonnes potential energy of one particle from a given a number of relative positions.
+
+    :param diff_vectors:
+    :return: Potential energy.
+    """
     pot_energy = 0
     for dv in diff_vectors:
         r = np.linalg.norm(dv)

@@ -1,3 +1,10 @@
+"""
+@authors: Magdalena and Johannes
+
+Main file containing the classes which represents the particle and mainly the class which represents whole simulation of molecular dynamic and it's inner functions. 
+
+"""
+
 import numpy as np
 
 import forces as forces
@@ -77,8 +84,6 @@ class MolecularDynamics:
 
         self.Particles = []
 
-        #positions, velocities = self.random_initial_conditions()
-
         positions = self.initial_positions_face_centered()
         velocities = self.initial_maxwellian_velocities()
 
@@ -92,10 +97,6 @@ class MolecularDynamics:
         for i in range(self.num_particles):
                 (self.Particles).append(Particle(positions[i, :], velocities[i, :]))
         while True:
-            #velocities = scale_factor*velocities
-            #for i in range(self.num_particles):
-                #(self.Particles).append(Particle(positions[i, :], scale_factor * velocities[i, :]))
-                #print(self.Particles[i].vel)
 
             for i in range(num_step):
                 self.simulation_step()
@@ -138,7 +139,8 @@ class MolecularDynamics:
     def initial_positions_face_centered(self):
         """
         Sets size of the box based on number density and number of particles . Then gives initial positions of atoms in face-centered crystal patern.
-        Returns: initial positions of N particles
+        
+        :return: initial positions of N particles
         """
         l = self.unit_size
         initial_pos = l/2 * np.ones(self.dimension)
@@ -175,46 +177,21 @@ class MolecularDynamics:
 
         positions = np.array(basis_pos + filling)
 
-        # fcc visualization
-        # ar = np.array(positions)
-        # print(np.amax(ar, axis=0))
-
-        # fig = plt.figure(figsize=(12, 12))
-        # ax = fig.add_subplot(projection='3d')
-        # ax.set_xlim(0,self.length)
-        # ax.set_ylim(0,self.length)
-        # ax.set_zlim(0,self.length)
-
-        # ax.scatter(ar[:, 0], ar[:, 1], ar[:, 2])
-        # plt.show()
-
         return positions
 
     def initial_maxwellian_velocities(self):
         """
-        Returns: non-scaled random maxwellian velocities
+        Draws initial random maxwellian velocities for a given temperture of the system.
+        
+        :return: Non-scaled random maxwellian velocities
         """
         velocities = np.zeros((self.num_particles,self.dimension))
-        """for i in range(self.dimension):
-            vel = np.random.normal( scale = 2 * self.temperature/119.8, # for argon
-            size=self.num_particles)
-            for j in range(self.num_particles):
-                velocities[j,i]=vel[j]"""
+
         velocities = np.random.normal( scale = 2 * self.temperature/119.8, # for argon
             size=(self.num_particles, self.dimension))
-
-
-        """fig,axs = plt.subplots(nrows=3, ncols=1)
-        axs[0].hist(velocities[:,0])
-        axs[1].hist(velocities[:,1])
-        axs[2].hist(velocities[:,2])"""
-#
-        plt.show()
     
         from scipy.stats import skew
-        """print("means: \t {0:.3f}\t {1:.3f}\t {2:.3f}".format(np.mean(velocities[:,0]), np.mean(velocities[:,1]), np.mean(velocities[:,2])))
-        print("skewness: {0:.3f}\t {1:.3f}\t {2:.3f}".format(skew(velocities[:,0]), skew(velocities[:,1]), skew(velocities[:,2])))"""
-        
+ 
         total_vel_x = sum(velocities[:,0])
         total_vel_y = sum(velocities[:,1])
         total_vel_z = sum(velocities[:,2])
@@ -233,7 +210,7 @@ class MolecularDynamics:
         """
         Minimum image convention for all particles.
 
-        :return: List of list of difference vectors of the (mirrored) particles.
+        :return: List of list of difference vectors of the (mirrored) particles
         """
         if self.new_mic:
             diff_vectors = []
@@ -278,6 +255,12 @@ class MolecularDynamics:
         return diff_vectors
 
     def simulation_step(self):
+        """
+        Realization of one simulation step according to the given self.method. 'Euler' is a standart Euler algorithm, 'Verlet_x' is a Verlet algorithm and 'Verlet_v' is a method for Velocity Verlet algorithm.
+        Saves energies of all particles, updates their current positions and velocities and saves old positions to trajectories.
+        
+        :return: 0
+        """
         list_diff_vectors = self.minimum_image_convention()
 
         if self.method == 'Verlet_x':
@@ -292,9 +275,6 @@ class MolecularDynamics:
                     # -------
 
                     if (np.linalg.norm(particle.pos - particle.trajectory[-2]) > self.length / 2):
-                        print("Alert!")
-                        print("using: ", particle.trajectory_out[-1])
-                        print("other than: ", particle.trajectory[-1])
                         pos = particle.trajectory_out[-1]
                     else:
                         pos = particle.trajectory[-1]
@@ -396,13 +376,15 @@ class MolecularDynamics:
         print("Done simulating! Now plotting.")
 
         if save_filename is None:
-            self.save_filename = "Trajectories.txt"
+            self.save_filename = "Trajectories_rho=" + str(self.rho).replace('.', '') + "_T=" + str(self.temperature/119.8).replace('.', '')\
+                            + "_N=" + str(self.num_particles) + ".txt"
         else:
             self.save_filename = save_filename
 
         # ----- the same for filename of energies
         if save_filename_energies is None:
-            self.save_filename_energies = "Energies.txt"
+            self.save_filename_energies = = "Energies_rho=" + str(self.rho).replace('.', '') + "_T=" + str(self.temperature/119.8).replace('.', '')\
+                            + "_N=" + str(self.num_particles) + ".txt"
         else:
             self.save_filename_energies = save_filename_energies
 
@@ -500,14 +482,12 @@ class MolecularDynamics:
     ########### PLOTTING
     def plot_trajectories(self):
         trajectories = self.save_trajectories(self.save_filename)
-        if self.dimension == 1:
-            plotting.plot_1D(trajectories, self.length)
-        elif self.dimension == 2:
+        if self.dimension == 2:
             plotting.plot_2D(trajectories, self.length)
         elif self.dimension == 3:
             plotting.plot_3D(trajectories, self.length)
         else:
-            print("Dimension bigger or equal than 4. No reasonable method for plotting implemented!")
+            print("Dimension either 1, or bigger than 3. No reasonable method for plotting implemented!")
 
         return 0
 
@@ -533,11 +513,3 @@ class MolecularDynamics:
         plt.show()
         return 0
 
-    def plot_velocity(self):
-
-        velocities = np.zeros((len(self.Particles[0].tot_vel), 3))
-        for particle in self.Particles:
-            velocities += particle.tot_vel
-        print("Variance of total momentum: ", np.var(velocities, axis=0))
-        print("Mean of total momentum: ", np.mean(velocities, axis=0))
-        plotting.plot_3D([velocities], self.length, title='Momentum conservation')

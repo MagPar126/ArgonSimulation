@@ -1,3 +1,10 @@
+"""
+@authors: Magdalena and Johannes
+
+Functions for loading and saving and loading data from files plus plotting functions for trajectories, energies, particle correlation and pressure.
+
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 
