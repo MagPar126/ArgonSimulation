@@ -1,7 +1,7 @@
 """
 @authors: Magdalena and Johannes
 
-Main file containing the classes which represents the particle and mainly the class which represents whole simulation of molecular dynamic and it's inner functions. 
+File containing the classes which represents the particle and the tool box for simulating molecular dynamics.
 
 """
 
@@ -16,10 +16,17 @@ import matplotlib.pyplot as plt
 
 class Particle:
     """
-        Particle
+        Particle class containing properties like position, velocity and mass.
     """
 
     def __init__(self, pos0, vel0, mass=1):
+        """
+        Constructor of particle.
+
+        :param pos0: Initial position of particle.
+        :param vel0: Initial velocity of particle.
+        :param mass: Mass of particle.
+        """
         # current position and velocity
         self.pos = pos0
         self.vel = vel0
@@ -42,12 +49,28 @@ class Particle:
 
 class MolecularDynamics:
     """
-    Whole simulation of N particles in a box interacting via Lennard-Jones-potential.
+    Simulation and measurement of N (same mass) particles in a box interacting via Lennard-Jones-potential.
     """
 
-    ######## INTIALIZATION AND RESETTING
-    def __init__(self, rho, time_step=0.001, temperature=1*119.8, dimension=3, num_unit_cells=3,  potential='LJ', method='Verlet_v',
+    ######## INTIALIZATION AND RESETTING ###############
+    def __init__(self, rho, temperature, time_step=0.001, dimension=3, num_unit_cells=3,  potential='LJ', method='Verlet_v',
                  new_mic=True):
+        """
+        Constructor of Molecular Dynamics simulation.
+
+        :param rho: Number density of the system.
+        :param temperature: Temperature (in Kelvin) of the system.
+        :param time_step: (Optional, default 0.001) Time step for the simulation (<<1).
+        :param dimension: (Optional, default 3) Dimension of the system.
+        :param num_unit_cells: (Optional, default 3 (=108 particles)) Number of unit cells of the FCC lattice,
+         which will be simulated.
+        :param potential: (Optional, default 'LJ') String, which tells with which potential particles interact.
+         Other potentials needs to be implemented before usage.
+        :param method: {'Euler', 'Verlet_x', 'Verlet_v'} (default 'Verlet_v') Method for discretization of EOM and
+         simulation step.
+        :param new_mic: {'True', 'False'} (default = 'True') Boolean to distinguish an old version of the minimum image
+         convention, which was also kind of nice;)
+        """
         self.rho = rho
 
         self.temperature = temperature
@@ -133,14 +156,14 @@ class MolecularDynamics:
         else:
             print("Wrong wording or force not implemented yet!")
             exit(-1)
-        self.__init__(self.rho, self.h, self.temperature, self.dimension, self.num_unit_cells, potential, self.method,
+        self.__init__(self.rho, self.temperature, self.h, self.dimension, self.num_unit_cells, potential, self.method,
                       self.new_mic)
         return 0
 
-    def random_initial_conditions(self):  # old "dumm" version
+    def random_initial_conditions(self):
         
         """
-        Returns completely random initial conditions.
+        Returns completely random initial conditions (not following physical assumptions).
         
         :return: Initial positions and velocities.
         """
@@ -152,7 +175,8 @@ class MolecularDynamics:
     def initial_positions_face_centered(self):
         
         """
-        Sets size of the box based on number density and number of particles . Then gives initial positions of atoms in face-centered crystal patern.
+        Sets size of the box based on number density and number of particles.
+        Then gives initial positions of atoms in face-centered crystal pattern.
         
         :return: Initial positions of N particles.
         """
@@ -196,7 +220,7 @@ class MolecularDynamics:
     def initial_maxwellian_velocities(self):
         
         """
-        Draws initial random maxwellian velocities for a given temperture of the system.
+        Draws initial random maxwellian velocities for a given temperature of the system.
         
         :return: Non-scaled random maxwellian velocities.
         """
@@ -220,13 +244,14 @@ class MolecularDynamics:
         print("skewness: {0:.3f}\t {1:.3f}\t {2:.3f}".format(skew(velocities[:,0]), skew(velocities[:,1]), skew(velocities[:,2])))
         return velocities
 
-    ########## SIMULATION
+    ########## SIMULATION ###############
     def minimum_image_convention(self):
         
         """
         Minimum image convention for all particles.
+        Version depends on whether new_mic = True/False. 'True' should always be preferred.
 
-        :return: List of list of difference vectors of the (mirrored) particles
+        :return: List of lists of difference vectors of the (mirrored) particles.
         """
         if self.new_mic:
                 
@@ -238,18 +263,6 @@ class MolecularDynamics:
                     diff_vector = (particle.pos - other_particles[j].pos + self.length / 2) % self.length - self.length / 2
                     diff_vectors[i][j] = diff_vector
                     diff_vectors[j+1][i] = -diff_vector
-                    
-                    
-            """diff_vectors = diff_vectors = [[] for j in range(self.num_particles-1)]
-            #print(diff_vectors)
-            for i,particle in enumerate(self.Particles):
-                other_particles = self.Particles.copy()
-                other_particles.remove(particle)
-                for j in range(i,self.num_particles-1):
-                    #print(i,j)
-                    diff_vector = (particle.pos - other_particles[j].pos + self.length / 2) % self.length - self.length / 2
-                    diff_vectors[i].append(diff_vector)
-                    #print(diff_vectors)"""
             
             
         else:
@@ -287,7 +300,10 @@ class MolecularDynamics:
     def simulation_step(self):
         
         """
-        Realization of one simulation step according to the given self.method. 'Euler' is a standart Euler algorithm, 'Verlet_x' is a Verlet algorithm and 'Verlet_v' is a method for Velocity Verlet algorithm.
+        Realization of one simulation step according to the given method.
+            'Euler' is a standard Euler algorithm,
+            'Verlet_x' is a Verlet algorithm in spatial domain and
+            'Verlet_v' is a method for Velocity Verlet algorithm.
         Saves energies of all particles, updates their current positions and velocities and saves old positions to trajectories.
         
         :return: 0 if success
@@ -321,7 +337,7 @@ class MolecularDynamics:
                     (particle.trajectory).append(new_position)
                     particle.pos = new_position
             else:
-                # previous timestep unknown, aproximate it
+                # previous timestep unknown, approximate it
                 for i, particle in enumerate(self.Particles):
                     diff_vectors = list_diff_vectors[i]
 
@@ -383,17 +399,25 @@ class MolecularDynamics:
                 particle.pos = new_position
                 (particle.tot_vel).append(velocity)
 
-
         else:
             print("Method for simulation step is not implemented.")
             exit(-1)
 
         return 0
 
-    def simulate(self, num_time_intervals, save_filename=None, save_filename_energies=None, plot = False, n_means =5):
+    def simulate(self, num_time_intervals, save_filename=None, save_filename_energies=None, plot=False, n_means=5):
         
         """
-        Executes simulation for a given time (num_time_intervals), measures pressure and pair cirrelation n_means times and saves tajectories and energies to a file. If plot == True, plots trajectories and total energies.
+        Executes simulation for a given time.
+        Measures pressure and pair correlation n_means times and saves trajectories and energies to a file.
+
+        :param num_time_intervals: Number of time intervals in intrinsic system time.
+        :param save_filename: (Optional) Filename to save trajectories of particles. By default constructed through the
+         system parameters.
+        :param save_filename_energies: (Optional) Filename to save energies of particles. By default constructed through
+         the system parameters.
+        :param plot: (Optional, default = False) Boolean, whether trajectories and energies should be plotted.
+        :param n_means: (Optional, default = 5) Number of measurements after half of the simulation time.
         
         :return: 0 if success
         """
@@ -401,9 +425,9 @@ class MolecularDynamics:
         num_steps = int(num_time_intervals/self.h)
 
         # number measurements per simulation
-        t_stamps = np.zeros(n_meas, int)
-        for i in range(n_meas):
-            t_stamps[i] = int(num_steps/2 + i*(num_steps/(2*n_meas)))
+        t_stamps = np.zeros(n_means, int)
+        for i in range(n_means):
+            t_stamps[i] = int(num_steps/2 + i*(num_steps/(2*n_means)))
         for t in range(num_steps):
             self.simulation_step()
             if t in t_stamps:
@@ -436,10 +460,18 @@ class MolecularDynamics:
             
         return 0
 
+    ########## MEASUREMENT ###############
     def stat_properties(self, num_init, num_time_intervals, save_filename=None, save_filename_energies=None, plot=False):
         
         """
-        Measures statictical properties (pair correlation and pressure) of a given system. Makes num_init simulations for num_time_intervals each and saves data. If plotting enabled, plots pressure and pair correlation from all data available for this set-up.
+        Measures physical properties (pair correlation and pressure) of a given system.
+
+        :param num_init: Integer which defines how often system and simulation will be reinitialized to take statistical
+        average.
+        :param num_time_intervals: Number of time intervals for on simulation.
+        :param save_filename: (Optional) Filename to save trajectories.
+        :param save_filename_energies: (Optional) Filename to sacve energies.
+        :param plot: (Optional, default = False) Boolean to decide whether to plot pressure and correlation or not.
         
         :return: 0 if success
         """
@@ -458,13 +490,12 @@ class MolecularDynamics:
                             + "_N=" + str(self.num_particles) + ".txt"
             plotting.plot_PP(filenamePP)
 
-
-
-    ########## MEASURE AND SAVE
     def measure_pressure(self, filenamePP=None):
         
         """
-        Meassures and saves pressures of the system.
+        Measures and saves pressures of the system for one timestamp.
+
+        :param filenamePP: (Optional) Filename to save the pressure.
         
         :return: 0 if success
         """
@@ -494,7 +525,9 @@ class MolecularDynamics:
     def measure_corr(self, filenamePC=None):
                 
         """
-        Meassures and saves pair correlation of the system.
+        Measures and saves pair correlation of the system for one timestamp.
+
+        :param filenamePC: (Optional) Filename to save tje correlations.
         
         :return: 0 if success
         """
@@ -521,7 +554,7 @@ class MolecularDynamics:
     def measurement(self):
                 
         """
-        Meassures and saves statistical properties of the system.
+        Measures and saves statistical properties of the system.
         
         :return: 0 if success
         """
@@ -529,13 +562,15 @@ class MolecularDynamics:
         self.measure_pressure()
         return 0
 
-    ########## SAVE RESULTS
+    ########## SAVE RESULTS ##############
     def save_trajectories(self, save_filename):
         
         """
         Saves trajectories of all particles in one big list.
+
+        :param save_filename: Filename to save the trajectories.
         
-        :return: Trajectories.
+        :return: Trajectories (List of lists of np.array(dimension)).
         """
 
         trajectories = []
@@ -549,8 +584,10 @@ class MolecularDynamics:
         
         """
         Saves total energies of all particles in one big list.
+
+        :param save_filename: Filename to save the energies.
         
-        :return: Total energies.
+        :return: Total energies (List of floats).
         """
 
         energies = []
@@ -560,11 +597,13 @@ class MolecularDynamics:
 
         return energies
 
-    ########### PLOTTING
+    ########### PLOTTING (similar to extra plotting tool, just as methods of the class) #################
     def plot_trajectories(self):
         
         """
         Plots trajectories from a given simulation.
+
+        .. warning:: Only call after simulate().
         
         :return: 0 if success
         """
@@ -578,10 +617,12 @@ class MolecularDynamics:
 
         return 0
 
-    def plot_energies(self):  # FINISH ME!!!
+    def plot_energies(self):
             
         """
         Plots total energies from a given simulation.
+
+        .. warning:: Only call after simulate().
         
         :return: 0 if success
         """

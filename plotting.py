@@ -1,7 +1,8 @@
 """
 @authors: Magdalena and Johannes
 
-Functions for loading and saving and loading data from files plus plotting functions for trajectories, energies, particle correlation and pressure.
+Functions for loading and saving data from files plus plotting functions for trajectories, energies, particle
+correlation and pressure.
 
 """
 
@@ -10,9 +11,10 @@ import matplotlib.pyplot as plt
 
 def load_from_file_(name_of_file="Trajectories.txt"):
     """
-    Loads particle trajectories from a file
+    Loads particle trajectories from a file.
 
-    :return: List of list of trajectories of particles, dimension and length of the box.
+    :param name_of_file: Filename of stored trajectories.
+    :return: List of lists of trajectories of particles, dimension and length of the box.
     """
     try:
         file = open(name_of_file,"r")
@@ -40,16 +42,19 @@ def load_from_file_(name_of_file="Trajectories.txt"):
     return all_trajectories, dimension, length
 
 def save_to_file(name_of_file, trajectories, length):
-    
     """
     Saves particle trajectories from the simulation to a file.
-    return: 0 if success
+
+    :param name_of_file: Name of file to store trajectories.
+    :param trajectories: List of lists of trajectories of particles.
+    :param length: Length of the box.
+    :return: 0 if success
     """
     number_of_particles = len(trajectories)
     number_of_steps = len(trajectories[0])
     dimension = len(trajectories[0][0])
     file = open(name_of_file,"w")
-    file.write("%d %d %d %d\n" %(number_of_particles,number_of_steps,dimension, length))
+    file.write("%d %d %d %f\n" %(number_of_particles,number_of_steps,dimension, length))
     for particle in range(number_of_particles):
         for step in range(number_of_steps):
             for i in range(dimension):
@@ -63,9 +68,13 @@ def save_energies_to_file(name_of_file, energies):
     """
     Saves particle energies from the simulation to a file.
     
-    Style of saving: 1st line = number of particles & number of steps, other lines = for each particle one line for kinetic energy & one line for total energies, then next particle.
-    
-    return: 0 if success
+    Style of saving: 1st line = number of particles & number of steps, other lines = for each particle one line for
+    kinetic energy & one line for total energies, then next particle.
+
+    :param name_of_file: Name of file to store energies.
+    :param energies: List of lists of energies of particles.
+
+    :return: 0 if success
     """
     number_of_particles = len(energies)
     number_of_steps = len(energies[0][0])
@@ -86,6 +95,8 @@ def load_energies_from_file_(name_of_file="Energies.txt"):
     
     """
     Loads particle energies from a file.
+
+    :param name_of_file: Name of file where energies are stored.
 
     :return: List of list of kinetic(0) and total(1) energies of particles.
     """
@@ -121,7 +132,9 @@ def plot_2D(trajectories, length):
             
     """
     Creates a plot of trajectories from a 2D simulation.
-        
+
+    :param trajectories: List of lists of trajectory of particles.
+    :param length: Lenght of the box.
     :return: 0 if success
     """
     color='r'
@@ -162,7 +175,11 @@ def plot_3D(trajectories, length, title=None):
             
     """
     Creates a plot of trajectories from a 3D simulation.
-        
+
+    :param trajectories: List of lists of trajectory of particles.
+    :param length: Lenght of the box.
+    :param title: (Optional) Title of the plot.
+
     :return: 0 if success
     """
     from mpl_toolkits.mplot3d import Axes3D
@@ -214,8 +231,9 @@ def plot_3D(trajectories, length, title=None):
 def plot_trajectories(name_of_file):
                 
     """
-    Creates a plot of trajectories from a data in a file
-        
+    Creates a plot of trajectories from data in a file.
+
+    :param name_of_file: Name of the file where trajectories are stored.
     :return: 0 if success
     """
     trajectories, dimension, length = load_from_file_(name_of_file)
@@ -227,11 +245,12 @@ def plot_trajectories(name_of_file):
         print("Dimension either 1, or bigger than 3. No reasonable method for plotting implemented!")
     return 
 
-def plot_energies(name_of_file):  #FINISH ME!!!
+def plot_energies(name_of_file):
             
     """
     Creates a plot of total energies from a data in a file.
-        
+
+    :param name_of_file: Name of file where energies are saved.
     :return: 0 if success
     """
     energies = load_energies_from_file_(name_of_file)
@@ -260,7 +279,11 @@ def plot_PC(name_of_file, length, dimension, num_particles):
                 
     """
     Loads all measured pair correlations from a file and creates an average histogram.
-        
+
+    :param name_of_file: Name of the file where particle distances are saved.
+    :param length: Lenght of the box.
+    :param dimension: Dimension of the simulated system.
+    :param num_particles: Number of simulated particles.
     :return: 0 if success
     """
     try:
@@ -321,7 +344,8 @@ def plot_PP(name_of_file):
                     
     """
     Loads all measured pressures from a file and creates a histogram with calculated mean value and variance.
-        
+
+    :param name_of_file: Name of the file where the pressure is saved.
     :return: 0 if success
     """
     try:
@@ -354,9 +378,3 @@ def plot_PP(name_of_file):
 
     file.close()
     return 0
-
-
-
-
-
-    
