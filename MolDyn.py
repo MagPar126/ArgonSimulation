@@ -412,9 +412,9 @@ class MolecularDynamics:
         Measures pressure and pair correlation n_means times and saves trajectories and energies to a file.
 
         :param num_time_intervals: Number of time intervals in intrinsic system time.
-        :param save_filename: (Optional) Filename to save trajectories of particles. By default constructed through the
+        :param save_filename: (Optional) Filename to save trajectories of particles. By default, constructed through the
          system parameters.
-        :param save_filename_energies: (Optional) Filename to save energies of particles. By default constructed through
+        :param save_filename_energies: (Optional) Filename to save energies of particles. By default, constructed through
          the system parameters.
         :param plot: (Optional, default = False) Boolean, whether trajectories and energies should be plotted.
         :param n_means: (Optional, default = 5) Number of measurements after half of the simulation time.
@@ -456,7 +456,7 @@ class MolecularDynamics:
         
         if plot == True:
             self.plot_trajectories()
-            self.plot_energies()
+            #self.plot_energies()
             
         return 0
 

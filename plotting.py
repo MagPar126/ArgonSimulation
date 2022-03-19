@@ -315,7 +315,6 @@ def plot_PC(name_of_file, length, dimension, num_particles):
         hist, bin_edges = np.histogram(distance, bins=150, range=(0,length/2))
         histograms.append(hist)
     final = np.zeros(histograms[0].shape)
-    print(N)
     
     for hist in histograms:
         final += hist
