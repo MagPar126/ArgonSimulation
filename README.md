@@ -10,7 +10,7 @@ Since we want to simulate the system and make measurements of physical propertie
 The basis of *every* simulation would be the creation of an object of class MolecularDynamics with specified temperature and density.
 After that, one can run a simulation of the system for a specified time t via object.simulate(t). 
 
-Since we want to measure the physical properties, we will call the member function stat_properties(NUM_INIT, SIM_TIME), which on its own carries out multiple measurements of the pair correlation and the pressure. Via enabling direct plotting via "plot=True", it is directly possible to see the outcomes of the simulation, such as the total/kinetic energy for each particle (not that interesting now, more for debugging purposes), the trajectories of the simulations as well as the measurements.
+Since we want to measure the physical properties, we will call the member function stat_properties(NUM_INIT, SIM_TIME), which on its own carries out multiple measurements of the pair correlation and the pressure. Via enabling direct plotting via "plot=True", it is directly possible to see the outcomes of the simulation, such as the trajectories of the simulations as well as the measurements.
 
 ## Plotting given data
 The simulation can take quite a while, depending on how many particles are included, how many initializations are done and for how long the system is simulated. Therefore it might be desirable to only plot the data which is already given.
