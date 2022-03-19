@@ -42,7 +42,7 @@ class Particle:
 
 class MolecularDynamics:
     """
-    Whole simulation of n particles in a box interacting via Lennard-Jones-potential.
+    Whole simulation of N particles in a box interacting via Lennard-Jones-potential.
     """
 
     ######## INTIALIZATION AND RESETTING
@@ -122,6 +122,12 @@ class MolecularDynamics:
         return 0
 
     def reset(self):
+        
+        """
+        Resets the whole simulation set-up.
+        
+        :return: 0 if success
+        """
         if self.potential == forces.LJ_potential_energy:
             potential = 'LJ'
         else:
@@ -129,18 +135,26 @@ class MolecularDynamics:
             exit(-1)
         self.__init__(self.rho, self.h, self.temperature, self.dimension, self.num_unit_cells, potential, self.method,
                       self.new_mic)
+        return 0
 
     def random_initial_conditions(self):  # old "dumm" version
+        
+        """
+        Returns completely random initial conditions.
+        
+        :return: Initial positions and velocities.
+        """
         np.random.seed(0)
         positions = self.length / 4 + self.length * 0.5 * np.random.rand(self.num_particles, self.dimension)
         velocities = 2 * self.length / 10 * np.random.rand(self.num_particles, self.dimension) - self.length / 10
         return positions, velocities
 
     def initial_positions_face_centered(self):
+        
         """
         Sets size of the box based on number density and number of particles . Then gives initial positions of atoms in face-centered crystal patern.
         
-        :return: initial positions of N particles
+        :return: Initial positions of N particles.
         """
         l = self.unit_size
         initial_pos = l/2 * np.ones(self.dimension)
@@ -180,10 +194,11 @@ class MolecularDynamics:
         return positions
 
     def initial_maxwellian_velocities(self):
+        
         """
         Draws initial random maxwellian velocities for a given temperture of the system.
         
-        :return: Non-scaled random maxwellian velocities
+        :return: Non-scaled random maxwellian velocities.
         """
         velocities = np.zeros((self.num_particles,self.dimension))
 
@@ -207,21 +222,36 @@ class MolecularDynamics:
 
     ########## SIMULATION
     def minimum_image_convention(self):
+        
         """
         Minimum image convention for all particles.
 
         :return: List of list of difference vectors of the (mirrored) particles
         """
         if self.new_mic:
-            diff_vectors = []
-            for particle in self.Particles:
+                
+            diff_vectors = diff_vectors = [[[] for i in range(self.num_particles-1)] for j in range(self.num_particles)]
+            for i,particle in enumerate(self.Particles):
                 other_particles = self.Particles.copy()
                 other_particles.remove(particle)
-                loc_diff_vectors = []  # diff vectors for this one particular particle
-                for other_particle in other_particles:
-                    diff_vector = (particle.pos - other_particle.pos + self.length / 2) % self.length - self.length / 2
-                    loc_diff_vectors.append(diff_vector)
-                diff_vectors.append(loc_diff_vectors)
+                for j in range(i,self.num_particles-1):
+                    diff_vector = (particle.pos - other_particles[j].pos + self.length / 2) % self.length - self.length / 2
+                    diff_vectors[i][j] = diff_vector
+                    diff_vectors[j+1][i] = -diff_vector
+                    
+                    
+            """diff_vectors = diff_vectors = [[] for j in range(self.num_particles-1)]
+            #print(diff_vectors)
+            for i,particle in enumerate(self.Particles):
+                other_particles = self.Particles.copy()
+                other_particles.remove(particle)
+                for j in range(i,self.num_particles-1):
+                    #print(i,j)
+                    diff_vector = (particle.pos - other_particles[j].pos + self.length / 2) % self.length - self.length / 2
+                    diff_vectors[i].append(diff_vector)
+                    #print(diff_vectors)"""
+            
+            
         else:
             diff_vectors = []
             for i, particle in enumerate(self.Particles):
@@ -255,11 +285,12 @@ class MolecularDynamics:
         return diff_vectors
 
     def simulation_step(self):
+        
         """
         Realization of one simulation step according to the given self.method. 'Euler' is a standart Euler algorithm, 'Verlet_x' is a Verlet algorithm and 'Verlet_v' is a method for Velocity Verlet algorithm.
         Saves energies of all particles, updates their current positions and velocities and saves old positions to trajectories.
         
-        :return: 0
+        :return: 0 if success
         """
         list_diff_vectors = self.minimum_image_convention()
 
@@ -359,12 +390,17 @@ class MolecularDynamics:
 
         return 0
 
-    def simulate(self, num_time_intervals, save_filename=None, save_filename_energies=None):
+    def simulate(self, num_time_intervals, save_filename=None, save_filename_energies=None, plot = False, n_means =5):
+        
+        """
+        Executes simulation for a given time (num_time_intervals), measures pressure and pair cirrelation n_means times and saves tajectories and energies to a file. If plot == True, plots trajectories and total energies.
+        
+        :return: 0 if success
+        """
 
         num_steps = int(num_time_intervals/self.h)
 
         # number measurements per simulation
-        n_meas = 5
         t_stamps = np.zeros(n_meas, int)
         for i in range(n_meas):
             t_stamps[i] = int(num_steps/2 + i*(num_steps/(2*n_meas)))
@@ -372,6 +408,7 @@ class MolecularDynamics:
             self.simulation_step()
             if t in t_stamps:
                 self.measurement()
+                print("Measured.")
             
         print("Done simulating! Now plotting.")
 
@@ -392,10 +429,20 @@ class MolecularDynamics:
         # -----
 
         self.save_trajectories(self.save_filename)
+        
+        if plot == True:
+            self.plot_trajectories()
+            self.plot_energies()
+            
         return 0
 
     def stat_properties(self, num_init, num_time_intervals, save_filename=None, save_filename_energies=None, plot=False):
-
+        
+        """
+        Measures statictical properties (pair correlation and pressure) of a given system. Makes num_init simulations for num_time_intervals each and saves data. If plotting enabled, plots pressure and pair correlation from all data available for this set-up.
+        
+        :return: 0 if success
+        """
         for i in range(num_init):
             print("\n\nSimulation {} out of {}".format(i+1, num_init))
             if i!=0: self.reset()
@@ -415,6 +462,13 @@ class MolecularDynamics:
 
     ########## MEASURE AND SAVE
     def measure_pressure(self, filenamePP=None):
+        
+        """
+        Meassures and saves pressures of the system.
+        
+        :return: 0 if success
+        """
+        
         diff_vectors = self.minimum_image_convention()
 
         pressure = self.rho*self.temperature/119.8
@@ -435,8 +489,15 @@ class MolecularDynamics:
         file.write(str(pressure))
         file.write("\n")
         file.close()
+        return 0
 
     def measure_corr(self, filenamePC=None):
+                
+        """
+        Meassures and saves pair correlation of the system.
+        
+        :return: 0 if success
+        """
         diff_vectors = self.minimum_image_convention()
         lengths = []
         for p in diff_vectors:
@@ -455,13 +516,27 @@ class MolecularDynamics:
         file.write(str(lengths))
         file.write("\n")
         file.close()
+        return 0
 
     def measurement(self):
+                
+        """
+        Meassures and saves statistical properties of the system.
+        
+        :return: 0 if success
+        """
         self.measure_corr()
         self.measure_pressure()
+        return 0
 
     ########## SAVE RESULTS
     def save_trajectories(self, save_filename):
+        
+        """
+        Saves trajectories of all particles in one big list.
+        
+        :return: Trajectories.
+        """
 
         trajectories = []
         for particle in self.Particles:
@@ -471,6 +546,12 @@ class MolecularDynamics:
         return trajectories
 
     def save_energies(self, save_filename):
+        
+        """
+        Saves total energies of all particles in one big list.
+        
+        :return: Total energies.
+        """
 
         energies = []
         for particle in self.Particles:
@@ -481,6 +562,12 @@ class MolecularDynamics:
 
     ########### PLOTTING
     def plot_trajectories(self):
+        
+        """
+        Plots trajectories from a given simulation.
+        
+        :return: 0 if success
+        """
         trajectories = self.save_trajectories(self.save_filename)
         if self.dimension == 2:
             plotting.plot_2D(trajectories, self.length)
@@ -492,6 +579,12 @@ class MolecularDynamics:
         return 0
 
     def plot_energies(self):  # FINISH ME!!!
+            
+        """
+        Plots total energies from a given simulation.
+        
+        :return: 0 if success
+        """
         x = np.arange(len(self.energies[0][0]))
         fig, axs = plt.subplots(3)
 
