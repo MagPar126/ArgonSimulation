@@ -6,7 +6,9 @@ Created on Fri Feb 11 12:30:22 2022
 @author: Magdalena and Johannes
 """
 
+# how often simulation will be reinitialized to take a statistical average
 NUM_INIT = 5
+# how long will you simulate
 SIM_TIME = 5
 
 from MolDyn import MolecularDynamics
