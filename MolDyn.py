@@ -620,7 +620,7 @@ class MolecularDynamics:
     def plot_energies(self):
             
         """
-        Plots total energies from a given simulation.
+        Plots kinetic and total energies of individual particles from a given simulation plus the total energy of the whole system.
 
         .. warning:: Only call after simulate().
         
@@ -636,14 +636,14 @@ class MolecularDynamics:
             energy += np.array(self.energies[particle][1])
         axs[2].plot(x, energy)
 
-        axs[0].set_title('Kinetic Energies')
-        axs[1].set_title('Total Energies')
-        axs[2].set_title('Total Energy of the System')
+        axs[0].set_title('Kinetic Energies',fontsize = 15)
+        axs[1].set_title('Total Energies',fontsize = 15)
+        axs[2].set_title('Total Energy of the system',fontsize = 15)
 
         axs[0].legend(loc='best')
         axs[1].legend(loc='best')
 
-        plt.tight_layout()
+        plt.subplots_adjust(hspace = 0.5)
         plt.show()
         return 0
 

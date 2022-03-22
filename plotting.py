@@ -165,6 +165,8 @@ def plot_2D(trajectories, length):
 
     plt.xlim(0, length)
     plt.ylim(0, length)
+    plt.xlabel('$X[\sigma]$')
+    plt.ylabel('$Y[\sigma]$')
 
     plt.title('Trajectories')
     plt.show()
@@ -220,6 +222,10 @@ def plot_3D(trajectories, length, title=None):
     ax.set_xlim3d(0,length)
     ax.set_ylim3d(0,length)
     ax.set_zlim3d(0,length)
+    
+    ax.set_xlabel('$X[\sigma]$', fontsize=10, rotation=150)
+    ax.set_ylabel('$Y[\sigma]$',fontsize=10)
+    ax.set_zlabel('$Z[\sigma]$', fontsize=10, rotation=60)
 
     if title is None:
         title = 'Trajectories'
@@ -248,7 +254,7 @@ def plot_trajectories(name_of_file):
 def plot_energies(name_of_file):
             
     """
-    Creates a plot of total energies from a data in a file.
+    Creates a plot of energies from a data in a file. Plots kinetic and total energies of individual particles plus the total energy of the whole system.
 
     :param name_of_file: Name of file where energies are saved.
     :return: 0 if success
@@ -258,20 +264,32 @@ def plot_energies(name_of_file):
     number_of_steps = len(energies[0][0])
 
     x = np.arange(number_of_steps)
-    fig, axs = plt.subplots(2)
-
+    fig, axs = plt.subplots(3,figsize=(15,20))
+    energy = 0
     for particle in range(number_of_particles):
         axs[0].plot(x, energies[particle][0], label='Particle ' + str(particle),
                     linewidth=2.5)
         axs[1].plot(x, energies[particle][1], label='Particle ' + str(particle),
                     linewidth=2.5)
-    axs[0].set_title('Kinetic Energies')
-    axs[1].set_title('Total Energies')
+        energy += np.array(energies[particle][1])
+    axs[2].plot(x, energy)
+    
+    axs[0].set_title('Kinetic Energies',fontsize = 15)
+    axs[1].set_title('Total Energies',fontsize = 15)
+    axs[2].set_title('Total Energy of the system',fontsize = 15)
+    
+    axs[0].set_xlabel("Number of simulation steps")
+    axs[1].set_xlabel("Number of simulation steps")
+    axs[2].set_xlabel("Number of simulation steps")
+    
+    axs[0].set_ylabel("$K[\epsilon]$")
+    axs[1].set_ylabel("$E[\epsilon]$")
+    axs[2].set_ylabel("$E_{TOT}[\epsilon]$")
 
     axs[0].legend(loc='best')
     axs[1].legend(loc='best')
 
-    plt.tight_layout()
+    plt.subplots_adjust(hspace = 0.5)
     plt.show()
     return 0
 

@@ -22,7 +22,7 @@ model_solid = MolecularDynamics(rho=1.2, temperature=0.5*119.8, num_unit_cells=3
 
 model_solid.stat_properties(NUM_INIT, SIM_TIME, plot=True)
 
-#plotting.plot_trajectories("Relevant measured data/Trajectories_rho=12_T=05_N=108.txt")
+plotting.plot_trajectories("Relevant measured data/Trajectories_rho=12_T=05_N=108.txt")
 #plotting.plot_PC("Relevant measured data/PC_rho=12_T=05_N=108.txt", 4.481405, 3, 108)
 #plotting.plot_PP("Relevant measured data/PP_rho=12_T=05_N=108.txt")
 
