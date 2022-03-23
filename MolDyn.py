@@ -54,7 +54,7 @@ class MolecularDynamics:
 
     ######## INTIALIZATION AND RESETTING ###############
     def __init__(self, rho, temperature, time_step=0.001, dimension=3, num_unit_cells=3,  potential='LJ', method='Verlet_v',
-                 new_mic=True):
+                 new_mic=True, const_electric_field = None, charge = 1):
         """
         Constructor of Molecular Dynamics simulation.
 
@@ -70,6 +70,9 @@ class MolecularDynamics:
          simulation step.
         :param new_mic: {'True', 'False'} (default = 'True') Boolean to distinguish an old version of the minimum image
          convention, which was also kind of nice;)
+        :param const_electric_field: {'None',list of floats}(Optional, default 'None') Possibility to add external constant
+        electric field. Needs to be an electric field vector, i.e. list of floats of length appropried for the dimension of the system!
+        :param charge: (Optional, default 1) In case of an external constant electric field assigned charge of all particles.
         """
         self.rho = rho
 
@@ -87,10 +90,20 @@ class MolecularDynamics:
         self.h = time_step
         self.method = method
         self.new_mic = new_mic
-
+        
         if potential == 'LJ':
             self.force = forces.LJ_force
             self.potential = forces.LJ_potential_energy
+            if const_electric_field != None:
+                if (isinstance(const_electric_field, list)) & (len(const_electric_field)==self.dimension):
+                    self.const_electric_field_vect = const_electric_field
+                    self.charge = charge
+                    self.el_field = True
+                else:
+                    print("Wrong format of the electric field!")
+                    exit(-1)
+            else: self.el_field = False
+            
         else:
             print("Wrong wording or force not implemented yet!")
             exit(-1)
@@ -101,6 +114,7 @@ class MolecularDynamics:
         """
         Initialize N particles at the fcc positions with random maxwellian velocities.
         Drive the system to the equilibrium via rescaling the velocities for several timestamps.
+        Always without electric field!
 
         :return: 0 if success
         """
@@ -120,7 +134,7 @@ class MolecularDynamics:
         for i in range(self.num_particles):
                 (self.Particles).append(Particle(positions[i, :], velocities[i, :]))
         while True:
-
+            
             for i in range(num_step):
                 self.simulation_step()
 
@@ -156,8 +170,15 @@ class MolecularDynamics:
         else:
             print("Wrong wording or force not implemented yet!")
             exit(-1)
-        self.__init__(self.rho, self.temperature, self.h, self.dimension, self.num_unit_cells, potential, self.method,
+        if self.el_field==False:
+            self.__init__(self.rho, self.temperature, self.h, self.dimension, self.num_unit_cells, potential, self.method,
                       self.new_mic)
+        
+        else: 
+            const_electric_field = self.const_electric_field_vect
+            charge = self.charge
+            self.__init__(self.rho, self.temperature, self.h, self.dimension, self.num_unit_cells, potential, self.method,
+                      self.new_mic,const_electric_field, charge)
         return 0
 
     def random_initial_conditions(self):
@@ -229,8 +250,6 @@ class MolecularDynamics:
         velocities = np.random.normal( scale = 2 * self.temperature/119.8, # for argon
             size=(self.num_particles, self.dimension))
     
-        from scipy.stats import skew
- 
         total_vel_x = sum(velocities[:,0])
         total_vel_y = sum(velocities[:,1])
         total_vel_z = sum(velocities[:,2])
@@ -240,8 +259,6 @@ class MolecularDynamics:
             velocities[i,1]  = v[1] - total_vel_y/self.num_particles
             velocities[i,2]  = v[2] - total_vel_z/self.num_particles
             
-        print("means: \t {0:.3f}\t {1:.3f}\t {2:.3f}".format(np.mean(velocities[:,0]), np.mean(velocities[:,1]), np.mean(velocities[:,2])))
-        print("skewness: {0:.3f}\t {1:.3f}\t {2:.3f}".format(skew(velocities[:,0]), skew(velocities[:,1]), skew(velocities[:,2])))
         return velocities
 
     ########## SIMULATION ###############
@@ -297,7 +314,7 @@ class MolecularDynamics:
                 diff_vectors.append(loc_diff_vectors)
         return diff_vectors
 
-    def simulation_step(self):
+    def simulation_step(self, const_electric_field = False):
         
         """
         Realization of one simulation step according to the given method.
@@ -305,9 +322,14 @@ class MolecularDynamics:
             'Verlet_x' is a Verlet algorithm in spatial domain and
             'Verlet_v' is a method for Velocity Verlet algorithm.
         Saves energies of all particles, updates their current positions and velocities and saves old positions to trajectories.
+        In case of const_electric_field = True also ads electric potential to the current LJ potential.
         
         :return: 0 if success
         """
+        if const_electric_field==True:
+            self.force = forces.LJ_electric_field_force(self.const_electric_field_vect,self.charge)
+            self.potential = forces.LJ_electric_field_potential_energy(self.const_electric_field_vect,self.charge)
+            
         list_diff_vectors = self.minimum_image_convention()
 
         if self.method == 'Verlet_x':
@@ -318,7 +340,7 @@ class MolecularDynamics:
 
                     # ------- saving energies first
                     particle.kin_energy.append(forces.kinetic_energy(particle.vel))
-                    particle.tot_energy.append(forces.kinetic_energy(particle.vel) + self.potential(diff_vectors))
+                    particle.tot_energy.append(forces.kinetic_energy(particle.vel) + self.potential(diff_vectors,particle.pos))
                     # -------
 
                     if (np.linalg.norm(particle.pos - particle.trajectory[-2]) > self.length / 2):
@@ -343,7 +365,7 @@ class MolecularDynamics:
 
                     # ------- saving energies first
                     particle.kin_energy.append(forces.kinetic_energy(particle.vel))
-                    particle.tot_energy.append(forces.kinetic_energy(particle.vel) + self.potential(diff_vectors))
+                    particle.tot_energy.append(forces.kinetic_energy(particle.vel) + self.potential(diff_vectors,particle.pos))
                     # -------
 
                     previous_position = particle.pos - self.h * particle.vel
@@ -364,7 +386,7 @@ class MolecularDynamics:
 
                 # ------- saving energies first
                 particle.kin_energy.append(forces.kinetic_energy(particle.vel))
-                particle.tot_energy.append(forces.kinetic_energy(particle.vel) + self.potential(diff_vectors))
+                particle.tot_energy.append(forces.kinetic_energy(particle.vel) + self.potential(diff_vectors,particle.pos))
                 # -------
 
                 new_position = particle.pos + self.h * particle.vel + (self.h ** 2 / 2) * self.force(diff_vectors)
@@ -387,7 +409,7 @@ class MolecularDynamics:
 
                 # ------- saving energies first
                 particle.kin_energy.append(forces.kinetic_energy(particle.vel))
-                particle.tot_energy.append(forces.kinetic_energy(particle.vel) + self.potential(diff_vectors))
+                particle.tot_energy.append(forces.kinetic_energy(particle.vel) + self.potential(diff_vectors,particle.pos))
                 # -------
 
                 new_position = particle.pos + particle.vel * self.h
@@ -410,6 +432,7 @@ class MolecularDynamics:
         """
         Executes simulation for a given time.
         Measures pressure and pair correlation n_means times and saves trajectories and energies to a file.
+        In case of an external electric field adds electric field.
 
         :param num_time_intervals: Number of time intervals in intrinsic system time.
         :param save_filename: (Optional) Filename to save trajectories of particles. By default, constructed through the
@@ -424,17 +447,25 @@ class MolecularDynamics:
 
         num_steps = int(num_time_intervals/self.h)
 
-        # number measurements per simulation
+        # number of measurements per simulation
         t_stamps = np.zeros(n_means, int)
         for i in range(n_means):
             t_stamps[i] = int(num_steps/2 + i*(num_steps/(2*n_means)))
-        for t in range(num_steps):
-            self.simulation_step()
-            if t in t_stamps:
-                self.measurement()
-                print("Measured.")
+        
+        if self.el_field==False:
+            for t in range(num_steps):
+                self.simulation_step()
+                if t in t_stamps:
+                    self.measurement()
+                    #print("Measured.")
+        else:
+            for t in range(num_steps):
+                self.simulation_step(const_electric_field=True)
+                if t in t_stamps:
+                    self.measurement()
+                    #print("Measured.")
             
-        print("Done simulating! Now plotting.")
+        print("Done simulating!")
 
         if save_filename is None:
             self.save_filename = "Trajectories_rho=" + str(self.rho).replace('.', '') + "_T=" + str(self.temperature/119.8).replace('.', '')\
@@ -456,7 +487,7 @@ class MolecularDynamics:
         
         if plot == True:
             self.plot_trajectories()
-            #self.plot_energies()
+            self.plot_energies()
             
         return 0
 
@@ -639,6 +670,14 @@ class MolecularDynamics:
         axs[0].set_title('Kinetic Energies',fontsize = 15)
         axs[1].set_title('Total Energies',fontsize = 15)
         axs[2].set_title('Total Energy of the system',fontsize = 15)
+
+        axs[0].set_xlabel("Number of simulation steps")
+        axs[1].set_xlabel("Number of simulation steps")
+        axs[2].set_xlabel("Number of simulation steps")
+    
+        axs[0].set_ylabel("$K[\epsilon]$")
+        axs[1].set_ylabel("$E[\epsilon]$")
+        axs[2].set_ylabel("$E_{TOT}[\epsilon]$")
 
         axs[0].legend(loc='best')
         axs[1].legend(loc='best')

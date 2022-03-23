@@ -16,3 +16,12 @@ Since we want to measure the physical properties, we will call the member functi
 The simulation can take quite a while, depending on how many particles are included, how many initializations are done and for how long the system is simulated. Therefore it might be desirable to only plot the data which is already given.
 
 For carrying out these plots, we use the module plotting. The correct functions for plotting are given in the main.py (commented). These functions take should be called with the correct path to the file, as well as (in some cases) some system constants. These can be seen in the file for the trajectories, but here will be just given for you.
+
+## External constant electric field
+The model also includes a possibility to add an external constant electric field to the system. This is allowed by setting the optional parameter "const_electric_field" while initializing the model as a vector of desired constant electric field. Charge of the particles is then defaultly set to 1 (in our simulation units), but can be changed via optional parameter "charge".
+
+The model initializes into equilibrium without the electric force and than "switches on" the electric field only for the simulation itself.
+
+In this case the interesting properties to observe are the trajectories of particles and the change in total energy of the system. In main.py we present the code which simulates the system once with given electric field (EL_FILD) for the time (SIM_TIME) and plots the trajectories and energies.
+
+Carrying out these plots is again possible externaly as well in the same way as described above.
