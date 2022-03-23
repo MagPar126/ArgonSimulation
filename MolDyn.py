@@ -506,6 +506,8 @@ class MolecularDynamics:
         
         :return: 0 if success
         """
+        if self.el_field==True:
+            print("WARNING! System is not in the equilibrium anymore due to the external field!")
         for i in range(num_init):
             print("\n\nSimulation {} out of {}".format(i+1, num_init))
             if i!=0: self.reset()
