@@ -348,8 +348,8 @@ def plot_PC(name_of_file, length, dimension, num_particles):
     fig, ax = plt.subplots()
     ax.bar(bin_edges[:-1], final, width=(bin_edges[1:] - bin_edges[:-1]), align='edge')
     ax.set_xlim(0,length/2)
-    ax.set_xlabel("r", fontsize=16)
-    ax.set_ylabel("g(r)", fontsize=16)
+    ax.set_xlabel(r"$\tilde{r}$", fontsize=16)
+    ax.set_ylabel(r"$g(\tilde{r})$", fontsize=16)
     ax.set_title("Pair Correlation", fontsize=18)
 
     plt.show()
@@ -387,8 +387,8 @@ def plot_PP(name_of_file):
     fig, ax = plt.subplots()
     ax.bar(bin_edges[:-1], hist, width=(bin_edges[1:] - bin_edges[:-1]), align='edge')
 
-    ax.set_xlabel("P", fontsize=16)
-    ax.set_ylabel(r"$\rho(p)$", fontsize=16)
+    ax.set_xlabel(r"$\tilde{P}$", fontsize=16)
+    ax.set_ylabel(r"$\rho(\tilde{P})$", fontsize=16)
     ax.set_title("Pressure, mean={0:.3f} var={1:.3f}".format(mean, var), fontsize=18)
 
     plt.show()

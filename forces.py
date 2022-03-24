@@ -70,9 +70,10 @@ def LJ_electric_field_potential_energy(electric_field,charge):
     def potential_function(diff_vectors,position):
         pot_energy = LJ_potential_energy(diff_vectors,position)
         for i in range(len(electric_field)):
-            pot_energy += position[i]*electric_field[i]
-        return pot_energy
+            pot_energy -= position[i]*electric_field[i]
+
     
+        return pot_energy
     return potential_function
 
 

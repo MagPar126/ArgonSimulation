@@ -52,26 +52,33 @@ model_gas.stat_properties(NUM_INIT, SIM_TIME, plot=True)
 
 #----------------------------------------------------------------------------------------------------------------------#
 ###### Observing the effects of an external constant electric fiel ########
+SIM_TIME2 = 2
 
 print("\n\nRUNNING: Simulation of the solid phase with electric field\n\n")
 
-model_solid_el = MolecularDynamics(rho=1.2, temperature=0.5*119.8, num_unit_cells=3, dimension=3, method='Verlet_v', new_mic=True,const_electric_field = [1,0,0])
+model_solid_el = MolecularDynamics(rho=1.2, temperature=0.5*119.8, num_unit_cells=3, dimension=3, method='Verlet_v', new_mic=True,const_electric_field = [0.2,0,0])
 
-model_solid_el.simulate(SIM_TIME, plot=True)
+model_solid_el.simulate(SIM_TIME2, plot=True)
+
+#plotting.plot_trajectories("Relevant measured data/Trajectories_rho=12_T=05_N=108_E=0_2.txt")
 
 
 print("\n\nRUNNING: Simulation of the solid phase with electric field\n\n")
 
 model_liquid_el = MolecularDynamics(rho=0.8, temperature=1.0*119.8, num_unit_cells=3, dimension=3, method='Verlet_v', new_mic=True,const_electric_field = [2.5,0,0])
 
-model_liquid_el.simulate(SIM_TIME, plot=True)
+model_liquid_el.simulate(SIM_TIME2, plot=True)
 
+#plotting.plot_trajectories("Relevant measured data/Trajectories_rho=12_T=05_N=108_E=2_5.txt")
 
 print("\n\nRUNNING: Simulation of the solid phase with electric field\n\n")
 
 model_gas_el = MolecularDynamics(rho=0.3, temperature=3.0*119.8, num_unit_cells=3, dimension=3, method='Verlet_v', new_mic=True,const_electric_field = [5,0,0])
 
-model_gas_el.simulate(SIM_TIME, plot=True)
+model_gas_el.simulate(SIM_TIME2, plot=True)
+
+#plotting.plot_trajectories("Relevant measured data/Trajectories_rho=12_T=05_N=108_E=5.txt")
+
 
 
 

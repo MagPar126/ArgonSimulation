@@ -22,6 +22,6 @@ The model also includes a possibility to add an external constant electric field
 
 The model initializes into equilibrium without the electric force and than "switches on" the electric field only for the simulation itself.
 
-In this case the interesting properties to observe are the trajectories of particles and the change in total energy of the system. In main.py we present the code which simulates the system once with given electric field (EL_FILD) for the time (SIM_TIME) and plots the trajectories and energies.
+In this case the interesting properties to observe are the trajectories of particles and the change in total energy of the system. In main.py we present the code which simulates the system once with given electric field (EL_FILD) for the time (SIM_TIME2) and plots the trajectories and energies.
 
 Carrying out these plots is again possible externaly as well in the same way as described above.
